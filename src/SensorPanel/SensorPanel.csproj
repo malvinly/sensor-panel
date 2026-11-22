@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- A windowed exe: no console window. Program.cs attaches to the terminal it was started from, if any. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- The tray icon and its menu. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <!-- requireAdministrator: the kernel-driver sensors need it. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <!-- Each method is JIT-compiled once, fully optimized, with no re-JIT: ~2 MB less private memory
+         in the published exe, flat instead of swinging ~6 MB; CPU unchanged. -->
+    <TieredCompilation>false</TieredCompilation>
+    <!-- Single-file publish: bundle SkiaSharp's native DLL inside the exe too. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Only Tray.cs and Program.cs use WinForms, by full name; its Orientation clashes with ours. -->
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 2 MB. The gen0 budget otherwise scales with the CPU's L3 cache (~48 MB on a 96 MB L3), so the
+         little garbage made per tick piles up for tens of minutes before the first collection. -->
+    <RuntimeHostConfigurationOption Include="System.GC.Gen0MaxBudget" Value="2097152" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="SkiaSharp" Version="4.157.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shipped layouts travel inside the exe and are written to a configs folder beside it on first run.
+         Program.WriteDefaultConfigs extracts every resource whose name starts with "configs/". -->
+    <EmbeddedResource Include="Configs\default-sample.json" LogicalName="configs/default-sample.json" />
+    <EmbeddedResource Include="Configs\media\background.png" LogicalName="configs/media/background.png" />
+    <EmbeddedResource Include="Configs\portrait-sample.json" LogicalName="configs/portrait-sample.json" />
+    <EmbeddedResource Include="Configs\slideshow-sample.json" LogicalName="configs/slideshow-sample.json" />
+    <EmbeddedResource Include="Configs\simple-rows.json" LogicalName="configs/simple-rows.json" />
+    <EmbeddedResource Include="Configs\simple-columns.json" LogicalName="configs/simple-columns.json" />
+    <EmbeddedResource Include="Configs\media\slides\*.png" LogicalName="configs/media/slides/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

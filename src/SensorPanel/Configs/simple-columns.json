@@ -1,0 +1,40 @@
+{
+  // CPU and GPU as two columns: temperature at the top, a very big load number, and a minute
+  // and a half of load history underneath. RAM along the bottom.
+  "name": "Simple columns",
+  "refreshMs": 1000,
+  "orientation": "landscape",
+  "brightness": 20,
+  "background": "#05070A",
+  "widgets": [
+    // ── CPU ─────────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 8, "y": 8, "w": 228, "h": 244, "radius": 10,
+      "fill": "#0E1218", "accent": { "edge": "top", "color": "#00E08A", "width": 4 } },
+    { "type": "text", "value": "CPU", "x": 24, "y": 29, "size": 15, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "cpu.temp", "format": "{0:F0}°C", "x": 222, "y": 25, "align": "right",
+      "size": 24, "weight": 600, "color": "#FFFFFF" },
+    { "type": "text", "sensor": "cpu.load", "format": "{0:F0}%", "x": 122, "y": 72, "align": "center",
+      "size": 80, "weight": 600, "color": "#00E08A" },
+    { "type": "graph", "sensor": "cpu.load", "x": 22, "y": 156, "w": 200, "h": 84, "history": 90,
+      "min": 0, "max": 100, "color": "#00E08A", "thickness": 2.5, "fill": true },
+
+    // ── GPU ─────────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 244, "y": 8, "w": 228, "h": 244, "radius": 10,
+      "fill": "#0E1218", "accent": { "edge": "top", "color": "#FF7A3D", "width": 4 } },
+    { "type": "text", "value": "GPU", "x": 260, "y": 29, "size": 15, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "gpu.temp", "format": "{0:F0}°C", "x": 458, "y": 25, "align": "right",
+      "size": 24, "weight": 600, "color": "#FFFFFF" },
+    { "type": "text", "sensor": "gpu.load", "format": "{0:F0}%", "x": 358, "y": 72, "align": "center",
+      "size": 80, "weight": 600, "color": "#FF7A3D" },
+    { "type": "graph", "sensor": "gpu.load", "x": 258, "y": 156, "w": 200, "h": 84, "history": 90,
+      "min": 0, "max": 100, "color": "#FF7A3D", "thickness": 2.5, "fill": true },
+
+    // ── RAM ─────────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 8, "y": 260, "w": 464, "h": 52, "radius": 10, "fill": "#0E1218" },
+    { "type": "text", "value": "RAM", "x": 26, "y": 281, "size": 15, "weight": 600, "color": "#8A93A6" },
+    { "type": "bar", "sensor": "mem.load", "x": 74, "y": 276, "w": 316, "h": 20, "min": 0, "max": 100,
+      "segments": 24, "gap": 3, "radius": 2, "color": "#A56BFF", "background": "#1A1F27" },
+    { "type": "text", "sensor": "mem.load", "format": "{0:F0}%", "x": 460, "y": 276, "align": "right",
+      "size": 28, "weight": 600, "color": "#A56BFF" }
+  ]
+}

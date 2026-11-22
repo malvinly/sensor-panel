@@ -1,0 +1,71 @@
+{
+  // A framed slideshow with a clock and a few readouts. See docs/guide.md for the full schema.
+  // The photo changes every 10 s. It is 320x240 = 153,600 bytes, so each change is a 1.2 s
+  // top-to-bottom wipe inside the frame; a full-screen photo would take 2.4 s.
+  // Put your own .png / .jpg files in the "media\slides" folder beside this file.
+  "name": "Slideshow sample",
+  "refreshMs": 1000,
+  "orientation": "landscape",
+  "brightness": 20,
+  "background": "#05070C",
+  "widgets": [
+    // ── Photo ───────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 6, "y": 6, "w": 324, "h": 244, "radius": 4, "fill": "#1E2636" },
+    { "type": "image", "folder": "media/slides", "intervalSeconds": 10, "x": 8, "y": 8, "w": 320, "h": 240 },
+
+    // ── Clock ───────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 338, "y": 6, "w": 136, "h": 78, "radius": 10,
+      "fill": "#0B101A", "border": { "color": "#1E2636", "width": 1 } },
+    { "type": "text", "clock": "HH:mm", "x": 406, "y": 19, "align": "center", "size": 44, "weight": 600 },
+    { "type": "text", "clock": "ddd dd MMM", "upper": true, "x": 406, "y": 63, "align": "center",
+      "size": 12, "weight": 600, "color": "#00C8FF" },
+
+    // ── CPU ─────────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 338, "y": 90, "w": 136, "h": 77, "radius": 10,
+      "fill": "#0B101A", "accent": { "edge": "left", "color": "#00E08A", "width": 4 } },
+    { "type": "text", "value": "CPU", "x": 352, "y": 101, "size": 12, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "cpu.temp", "format": "{0:F0}°C", "x": 352, "y": 120,
+      "font": "Consolas", "size": 11, "color": "#C8CEDA" },
+    { "type": "text", "sensor": "cpu.load", "format": "{0:F0}%", "x": 464, "y": 101, "align": "right",
+      "size": 24, "weight": 600, "color": "#00E08A" },
+    { "type": "graph", "sensor": "cpu.load", "x": 352, "y": 138, "w": 112, "h": 20, "history": 40,
+      "min": 0, "max": 100, "color": "#00E08A", "fill": true },
+
+    // ── GPU ─────────────────────────────────────────────────────────────────
+    { "type": "panel", "x": 338, "y": 173, "w": 136, "h": 77, "radius": 10,
+      "fill": "#0B101A", "accent": { "edge": "left", "color": "#FF7A3D", "width": 4 } },
+    { "type": "text", "value": "GPU", "x": 352, "y": 184, "size": 12, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensors": ["gpu.temp", "gpu.power"], "format": "{0:F0}°C {1:F0} W", "x": 352, "y": 203,
+      "font": "Consolas", "size": 11, "color": "#C8CEDA" },
+    { "type": "text", "sensor": "gpu.load", "format": "{0:F0}%", "x": 464, "y": 184, "align": "right",
+      "size": 24, "weight": 600, "color": "#FF7A3D" },
+    { "type": "bar", "sensor": "gpu.load", "x": 352, "y": 226, "w": 112, "h": 12, "min": 0, "max": 100,
+      "segments": 14, "gap": 2, "radius": 2, "color": "#FF7A3D", "background": "#232A38" },
+
+    // ── Bottom row ──────────────────────────────────────────────────────────
+    { "type": "panel", "x": 6, "y": 258, "w": 111, "h": 56, "radius": 10, "fill": "#0B101A",
+      "accent": { "edge": "bottom", "color": "#A56BFF", "width": 2 } },
+    { "type": "text", "value": "RAM", "x": 16, "y": 268, "size": 10, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "mem.load", "format": "{0:F0}%", "x": 16, "y": 286, "size": 19, "weight": 600 },
+    { "type": "text", "sensor": "mem.used", "format": "{0:F1} GB", "x": 107, "y": 292, "align": "right",
+      "size": 9, "color": "#8A93A6" },
+
+    { "type": "panel", "x": 125, "y": 258, "w": 111, "h": 56, "radius": 10, "fill": "#0B101A",
+      "accent": { "edge": "bottom", "color": "#00C8FF", "width": 2 } },
+    { "type": "text", "value": "DOWN", "x": 135, "y": 268, "size": 10, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "net.down", "format": "{0:F1}", "x": 135, "y": 286, "size": 19, "weight": 600 },
+    { "type": "text", "value": "MB/s", "x": 226, "y": 292, "align": "right", "size": 9, "color": "#8A93A6" },
+
+    { "type": "panel", "x": 244, "y": 258, "w": 111, "h": 56, "radius": 10, "fill": "#0B101A",
+      "accent": { "edge": "bottom", "color": "#FF5C8A", "width": 2 } },
+    { "type": "text", "value": "UP", "x": 254, "y": 268, "size": 10, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensor": "net.up", "format": "{0:F1}", "x": 254, "y": 286, "size": 19, "weight": 600 },
+    { "type": "text", "value": "MB/s", "x": 345, "y": 292, "align": "right", "size": 9, "color": "#8A93A6" },
+
+    { "type": "panel", "x": 363, "y": 258, "w": 111, "h": 56, "radius": 10, "fill": "#0B101A",
+      "accent": { "edge": "bottom", "color": "#8A93A6", "width": 2 } },
+    { "type": "text", "value": "UPTIME", "x": 373, "y": 268, "size": 10, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensors": ["uptime.days", "uptime.hours", "uptime.minutes"], "format": "{0:0}d {1:0}h {2:00}m",
+      "x": 373, "y": 288, "font": "Consolas", "size": 14, "color": "#FFFFFF" }
+  ]
+}

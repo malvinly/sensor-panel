@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SensorPanel.Screenshots/SensorPanel.Screenshots.csproj" />
+    <Project Path="src/SensorPanel/SensorPanel.csproj" />
+  </Folder>
+</Solution>
