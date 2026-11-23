@@ -246,8 +246,11 @@ Run `SensorPanel sensors` for the live list on your machine. Built in:
 | `gpu.temp` | °C (whole degrees from NVML) | | `uptime.days`, `uptime.hours`, `uptime.minutes` | |
 | `gpu.power` | W | | `gpu.mem.used`, `gpu.mem.total` | GB |
 | `gpu.fan` | RPM | | `fan.cpu` *, `fan.sys1` *, `fan.sys2` * | RPM (motherboard headers) |
+| `fps` † | frames/s | | | |
 
 \* needs administrator + PawnIO.
+
+† Frames per second of the app in the foreground, from Windows' own record of every frame shown (an ETW trace of the graphics kernel), for DirectX, Vulkan and OpenGL alike. It reads "--" for apps that do not present frames that way (browsers, Electron apps, UWP apps) and for the second or two after switching windows. Counting runs only while a layout shows `fps`, and costs about 1 MB of memory.
 
 ### Adding a key
 
