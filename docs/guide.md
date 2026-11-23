@@ -14,7 +14,7 @@ Right-click the icon for the menu:
 
 Each config has a folder of its own inside `configs`, holding the `.json` file and the pictures it draws, so copying the folder copies everything the config needs. A `.json` file directly in `configs`, outside a folder of its own, is not listed; one left there by an older version of the app can be moved into a new folder, with any pictures it draws, and its `path` and `folder` values changed to match (see [`image`](#image-picture-or-slideshow)).
 
-On first start the exe creates the `configs` folder and writes the one shipped layout into it: the `default` folder, with `default.json` and its background picture. Delete the `configs` folder to get the original back. The other layouts are only in the repository: to use one, copy its folder from [src/SensorPanel/Configs](../src/SensorPanel/Configs) into the `configs` folder.
+On first start the exe creates the `configs` folder and writes the two shipped layouts into it: the `default` folder, with `default.json` and its background picture, and the `gaming` folder, with `gaming.json` (see [`gaming`](#gaming)). Delete the `configs` folder to get the originals back. The other layouts are only in the repository: to use one, copy its folder from [src/SensorPanel/Configs](../src/SensorPanel/Configs) into the `configs` folder.
 
 At each start the app runs, in order:
 
@@ -77,17 +77,30 @@ During development, from an elevated terminal at the repository root: `dotnet ru
 
 `src/SensorPanel.Screenshots` renders configs with made-up sensor values and a fixed clock, through the app's own renderer, so it needs no panel, sensors or administrator rights. `dotnet run --project src/SensorPanel.Screenshots` regenerates the README screenshots in `docs/images`; `dotnet run --project src/SensorPanel.Screenshots -- path\to\config.json out.png` renders any config.
 
-`tests/SensorPanel.Tests` holds the unit tests: `dotnet test` from the repository root runs them, without a panel, sensors or administrator rights. They load and render every layout in `src/SensorPanel/Configs` and check that it reads only keys that exist, so run them after adding or editing a layout or a key. The tests also check the config rules, the wire protocol, which parts of a frame are sent, the fps arithmetic, and the configs folder written on first run.
+`tests/SensorPanel.Tests` holds the unit tests: `dotnet test` from the repository root runs them, without a panel, sensors or administrator rights. They load and render every layout in `src/SensorPanel/Configs` and check that it reads only keys that exist, so run them after adding or editing a layout or a key. The tests also check the config rules, the wire protocol, which parts of a frame are sent, the fps arithmetic, which exes count as games and when the panel switches for them, and the configs folder and settings.json written on first run.
 
 The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not matter if Windows renumbers it. If the panel is unplugged or the PC sleeps, the app keeps retrying and repaints when it comes back. Close any other program that drives the panel (such as turing-smart-screen-python) before starting this one.
 
 ## settings.json
 
-An optional file beside the exe for choices about this PC rather than about a layout. It is read once at start (also by `--png` and `sensors`), with the same rules as a config: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored. It has one setting:
+A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has two settings:
 
 ```json
-{ "lhmGpu": true }
+{
+  "lhmGpu": false,
+  "gaming": {
+    "config": "gaming/gaming.json",
+    "games": [
+      "*/steamapps/common/*", "C:/XboxGames/*", "eldenring.exe",
+      "!*/steamapps/common/wallpaper_engine/*", "!*/steamapps/common/SteamVR/*"
+    ],
+    "scanMs": 2000,
+    "endAfterMs": 30000
+  }
+}
 ```
+
+### `lhmGpu`
 
 `lhmGpu` (default `false`) reads the GPU entirely through LibreHardwareMonitor. Normally the `gpu.*` keys of an NVIDIA card come from NVML, the monitoring library that ships with NVIDIA's driver, where a poll takes under half a millisecond. Any other GPU (AMD, Intel), or an NVIDIA card whose driver lacks NVML, is read through LibreHardwareMonitor anyway.
 
@@ -98,6 +111,20 @@ Use `lhmGpu` when:
 - an NVML reading looks wrong on your card.
 
 It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use.
+
+### `gaming`
+
+Shows another layout while a game runs, whether or not the game has the focus, and goes back to yours when it ends. It is off while `games` is empty (as in the file the exe writes) or holds only `!` entries, and when `gaming` is left out.
+
+- `config` is the layout to show, relative to the `configs` folder, and it must be inside it. The exe writes the `gaming` layout there on first start. A `configs` folder from before that has none: copy the `gaming` folder from [src/SensorPanel/Configs](../src/SensorPanel/Configs), or delete `configs` to have both shipped layouts written afresh.
+- `games` are the exes that count as games. A pattern with a slash is matched against the exe's whole path, one without against its file name. `*` stands for any characters, slashes included, and `?` for one; case is ignored, and `\\` works as well as `/`. `"*/steamapps/common/*"` covers every Steam game, in any library, however it was started.
+- A pattern starting with `!` marks exes that are never games, whatever else they match. Steam installs tools under `steamapps/common` too, such as Wallpaper Engine, SteamVR and Lossless Scaling. One that stays running would keep the gaming layout up for as long as it runs, so give each a `!` entry.
+- `scanMs` (default `2000`, from 500 to 60000) is how often the app looks through the running processes, which costs about 3 ms of CPU each time.
+- `endAfterMs` (default `30000`, from 0 to 3600000) is how long the gaming layout stays after the last game was seen, so a game restarting or going back to its launcher does not flip the panel.
+
+A timing out of range, or a `config` that is missing or not a layout in the `configs` folder, is reported, and the panel then does not switch for games. Once a game has been running for 5 s the panel switches to `config`, so something that matches for only a moment does not switch the panel there and back. Both delays are measured by the scans, so each can come up to one `scanMs` late. The log names the exe that started each switch, which is how to find what to exclude with `!`.
+
+Picking from the tray menu during a game takes over until the game ends, and that pick becomes the layout the panel goes back to, as any pick does. Picking the gaming layout itself during a game only reloads it, and does not count as a pick: the panel still goes back to the earlier layout afterwards. A pick that is still loading when a game starts or ends is not replaced: it stays, and becomes yours. A `--png` run never switches.
 
 ## Config schema
 

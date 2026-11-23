@@ -42,11 +42,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Only the default layout travels inside the exe; it is written to a configs folder beside it on first run.
+    <!-- The default layout, and the gaming one that settings.json's "gaming" names, travel inside the exe;
+         they are written to a configs folder beside it on first run.
          Program.WriteDefaultConfigs extracts every resource whose name starts with "configs/".
          The other layouts in Configs stay in the repository, to be copied by hand, one folder each. -->
     <EmbeddedResource Include="Configs\default\default.json" LogicalName="configs/default/default.json" />
     <EmbeddedResource Include="Configs\default\background.png" LogicalName="configs/default/background.png" />
+    <EmbeddedResource Include="Configs\gaming\gaming.json" LogicalName="configs/gaming/gaming.json" />
+    <!-- settings.json travels the same way, and is written beside the exe whenever there is none (Program.WriteDefaultSettings). -->
+    <EmbeddedResource Include="settings.json" LogicalName="settings.json" />
   </ItemGroup>
 
 </Project>

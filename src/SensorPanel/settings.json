@@ -1,0 +1,21 @@
+// Choices about this PC rather than about a layout. Read once at start, so restart SensorPanel
+// after editing. Every setting is described in docs/guide.md, under settings.json.
+{
+  // true: read the GPU through LibreHardwareMonitor instead of NVIDIA's NVML.
+  "lhmGpu": false,
+
+  // Show another layout while a game runs, and go back to yours after it ends.
+  // Off while "games" is empty, or holds only "!" entries.
+  "gaming": {
+    // Relative to the configs folder. The exe writes the gaming layout there on first start.
+    "config": "gaming/gaming.json",
+    // Exes that are games: a path ("*/steamapps/common/*") or a file name ("eldenring.exe"),
+    // with * and ? as wildcards, ignoring case. A "!" first marks exes that are never games:
+    // "!*/steamapps/common/wallpaper_engine/*".
+    "games": [],
+    // How often to look for a running game, in ms (500 to 60000).
+    "scanMs": 2000,
+    // How long the gaming layout stays after the last game exits, in ms (0 to 3600000).
+    "endAfterMs": 30000
+  }
+}

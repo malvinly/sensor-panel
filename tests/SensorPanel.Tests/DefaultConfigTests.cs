@@ -16,12 +16,13 @@ public sealed class DefaultConfigTests : IDisposable
     public void Dispose() => _dir.Dispose();
 
     [Fact]
-    public void First_run_writes_the_default_layout_and_its_background()
+    public void First_run_writes_the_default_layout_its_background_and_the_gaming_layout()
     {
         Program.WriteDefaultConfigs(Configs);
 
         Assert.True(File.Exists(Default));
         Assert.True(File.Exists(Background));
+        Assert.True(File.Exists(Path.Combine(Configs, "gaming", "gaming.json")));
         Assert.False(Directory.Exists(Configs + ".new"), "the staging folder is renamed, not left behind");
     }
 

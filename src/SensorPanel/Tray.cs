@@ -18,7 +18,8 @@ internal sealed class Tray : IDisposable
     private readonly Worker _worker;
     private readonly string _configsDirectory;
     private readonly string? _lastConfigFile;
-    private string? _active, _picked;
+    private readonly Selection _selection = new();
+    private GameWatcher? _games;    // null when settings.json does not ask for switching
 
     /// <param name="lastConfigFile">Where the menu choice is remembered, or null not to remember it.</param>
     public Tray(Worker worker, string configsDirectory, string? lastConfigFile)
@@ -38,20 +39,45 @@ internal sealed class Tray : IDisposable
         // WinForms opens the menu with Cancel already set when it has no items, as it has none the first time.
         _menu.Opening += (_, e) => { BuildMenu(); e.Cancel = false; };
 
-        // Both are raised on other threads.
+        // All three are raised on other threads.
         Log.Warned += message => Post(() =>
             _icon.ShowBalloonTip(10_000, "SensorPanel", message, Forms.ToolTipIcon.Warning));
         worker.ActiveChanged += path => Post(() =>
         {
-            _active = path;
-            if (path == _picked) Remember(path);    // the worker reports the path exactly as Pick gave it
+            if (_selection.Loaded(path)) Remember(path);
+            // Only now, and Selection relies on it: until a config has loaded there is no "yours" to go back to.
+            _games?.Start();
             string text = "SensorPanel: " + Config.DisplayName(path);
             _icon.Text = text.Length > 127 ? text[..127] : text;    // the longest tooltip Windows takes
         });
+        worker.LoadFailed += path => Post(() => _selection.Failed(path));
     }
 
     /// <summary>Runs <paramref name="action"/> on the UI thread, later. Callable from any thread.</summary>
     public void Post(Action action) => _window.BeginInvoke(action);
+
+    /// <summary>
+    /// settings.json's "gaming": while a game runs, show its config (see <see cref="Selection"/>).
+    /// Off unless <see cref="Program.GamingSettings.Check"/> passes. Called on the UI thread before
+    /// its message loop runs, so before any load the worker reports has been handled.
+    /// </summary>
+    public void WatchGames(Program.GamingSettings? gaming)
+    {
+        if (gaming?.Check(_configsDirectory) is not { } check) return;
+        _selection.GamingConfig = check.Config;
+        _games = new GameWatcher(check.Patterns, gaming.ScanMs, gaming.EndAfterMs, game => Post(() => GameChanged(game)));
+        Log.Info($"While a game runs the panel shows {gaming.Config} (looking every {gaming.ScanMs} ms, back {gaming.EndAfterMs} ms after the game).");
+    }
+
+    /// <param name="game">The game's exe when a game session starts, null when it ends.</param>
+    private void GameChanged(string? game)
+    {
+        string? path = game is not null ? _selection.GameStarted() : _selection.GameEnded();
+        Log.Info(game is not null
+            ? $"A game is running ({game}): {(path is null ? "nothing to switch" : "switching to the gaming layout")}."
+            : $"No game is running any more: {(path is null ? "nothing to switch" : "switching back")}.");
+        if (path is not null) _worker.Switch(path);
+    }
 
     /// <summary>
     /// Rebuilt every time, so a config folder dropped into configs, or a renamed config, shows without a
@@ -63,14 +89,15 @@ internal sealed class Tray : IDisposable
 
         var configs = Directory.Exists(_configsDirectory) ? Config.Files(_configsDirectory).ToList() : [];
         // A config started with --config from somewhere else is listed too, so something is ticked.
-        if (_active is not null && !configs.Contains(_active, StringComparer.OrdinalIgnoreCase)) configs.Add(_active);
+        string? active = _selection.Active;
+        if (active is not null && !configs.Contains(active, StringComparer.OrdinalIgnoreCase)) configs.Add(active);
 
         foreach (var (path, name) in Config.ByName(configs))
         {
             var item = new Forms.ToolStripMenuItem
             {
                 Text = name.Replace("&", "&&"),     // a lone & marks an access key
-                Checked = path.Equals(_active, StringComparison.OrdinalIgnoreCase),
+                Checked = path.Equals(active, StringComparison.OrdinalIgnoreCase),
             };
             item.Click += (_, _) => Pick(path);
             _menu.Items.Add(item);
@@ -88,7 +115,7 @@ internal sealed class Tray : IDisposable
     /// <summary>Picking the config that is already running reloads it, which is how an edit is applied.</summary>
     private void Pick(string path)
     {
-        _picked = path;
+        _selection.Pick(path);
         _worker.Switch(path);
     }
 
@@ -116,12 +143,14 @@ internal sealed class Tray : IDisposable
     /// </summary>
     public void Exit()
     {
+        _games?.Dispose();  // first, so no game switches the config while the panel is being blanked
         _worker.Stop();
         Forms.Application.ExitThread();
     }
 
     public void Dispose()
     {
+        _games?.Dispose();
         _icon.Dispose();    // otherwise the icon lingers until the mouse passes over it
         _window.Dispose();
     }

@@ -36,6 +36,9 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     /// </summary>
     public event Action<string>? ActiveChanged;
 
+    /// <summary>Raised on the worker thread when a config could not be loaded, with the path as it was given; what was running keeps running.</summary>
+    public event Action<string>? LoadFailed;
+
     /// <param name="fallbackPath">Loaded instead if <paramref name="configPath"/> cannot be.</param>
     /// <param name="lhmGpu">"lhmGpu" from settings.json, for the SensorHub.</param>
     public void Start(string configPath, string fallbackPath, bool lhmGpu)
@@ -194,6 +197,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
         {
             renderer?.Dispose();
             Log.Warn($"Cannot load {path}:\n  {e.Message}");
+            LoadFailed?.Invoke(path);
             return false;
         }
 

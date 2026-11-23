@@ -68,12 +68,16 @@ internal static class Program
 
         if (pngPath is null) Log.Start(Path.Combine(AppContext.BaseDirectory, "SensorPanel.log"));
         WriteDefaultConfigs(configs);
+        WriteDefaultSettings(SettingsPath);
         WarnIfNoDriver();
+        var settings = ReadSettings();
+        // A --png run is a preview beside the tray instance: it shows the config it was given.
+        if (pngPath is null) tray.WatchGames(settings.Gaming);
 
         // --config wins for this run; otherwise the last config picked from the menu, or the default.
         string fallback = DefaultConfig(configs);
         string? last = File.Exists(lastConfigFile) ? Path.Combine(configs, File.ReadAllText(lastConfigFile).Trim()) : null;
-        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, ReadSettings().LhmGpu);
+        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu);
 
         // Ctrl+C blanks the panel on the way out, through the same Exit as the menu item and as
         // Windows shutting down or signing out (which the tray hears itself). Being killed (Task
@@ -92,17 +96,97 @@ internal static class Program
         return 0;
     }
 
-    /// <summary>settings.json beside the exe: choices about this PC rather than a layout. Optional; see docs/guide.md.</summary>
-    private sealed class Settings
+    /// <summary>
+    /// settings.json beside the exe: choices about this PC rather than a layout. Written on first
+    /// start from the copy inside the exe (settings.json in the project), and optional; see docs/guide.md.
+    /// </summary>
+    internal sealed class Settings
     {
         /// <summary>The GPU entirely through LibreHardwareMonitor, not NVML.</summary>
         public bool LhmGpu { get; set; }
+        public GamingSettings? Gaming { get; set; }
+    }
+
+    /// <summary>"gaming": the layout to show while a game runs (see <see cref="Tray.WatchGames"/>).</summary>
+    internal sealed class GamingSettings
+    {
+        /// <summary>Relative to the configs folder, like "gaming/gaming.json".</summary>
+        public string? Config { get; set; }
+        /// <summary>Patterns for the exes that are games, "!" first for those that never are (<see cref="GamePatterns"/>). None but "!" ones: switching is off.</summary>
+        public List<string?>? Games { get; set; }
+        /// <summary>How often the running processes are looked through, in ms.</summary>
+        public int ScanMs { get; set; } = 2000;
+        /// <summary>How long after the last game was seen the panel goes back, in ms.</summary>
+        public int EndAfterMs { get; set; } = 30_000;
+
+        internal const int MinScanMs = 500, MaxScanMs = 60_000, MaxEndAfterMs = 3_600_000;
+
+        /// <summary>
+        /// Whether switching for games is on, and if so the gaming layout's full path and the patterns.
+        /// Off without a word when no pattern names a game (the shipped file). Anything else that is
+        /// wrong is reported, and turns it off: the timings out of range, a config that is missing,
+        /// not a path, or outside <paramref name="configs"/> (the elevated app reads only layouts from there).
+        /// </summary>
+        internal (string Config, GamePatterns Patterns)? Check(string configs)
+        {
+            var patterns = new GamePatterns(Games ?? []);
+            if (patterns.IsEmpty) return null;
+
+            string? problem = null, path = null;
+            if (ScanMs is < MinScanMs or > MaxScanMs)
+                problem = $"scanMs must be from {MinScanMs} to {MaxScanMs}";
+            else if (EndAfterMs is < 0 or > MaxEndAfterMs)
+                problem = $"endAfterMs must be from 0 to {MaxEndAfterMs}";
+            else if (string.IsNullOrWhiteSpace(Config))
+                problem = "config is missing";
+            else
+            {
+                string root = Path.GetFullPath(configs).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                try { path = Path.GetFullPath(Path.Combine(root, Config)); }
+                catch (Exception e) when (e is ArgumentException or NotSupportedException or IOException) { problem = $"config \"{Config}\" is not a path"; }
+                if (path is not null && !path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                    problem = $"config \"{Config}\" is not inside the configs folder";
+                else if (path is not null && !File.Exists(path))
+                    problem = $"config \"{Config}\" is not in the configs folder";
+            }
+
+            if (problem is null) return (path!, patterns);
+            Log.Warn($"settings.json: gaming.{problem}, so the panel does not switch for games.");
+            return null;
+        }
+    }
+
+    private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "settings.json");
+
+    /// <summary>The csproj embeds the shipped settings.json under this name.</summary>
+    internal const string ShippedSettings = "settings.json";
+
+    /// <summary>
+    /// Writes the shipped settings.json, where switching for games is off, if there is none: on
+    /// first start, and after it is deleted. One that is there is never touched. It is written under
+    /// another name and renamed, so a write cut short never leaves a file that will not parse.
+    /// </summary>
+    internal static void WriteDefaultSettings(string path)
+    {
+        if (File.Exists(path)) return;
+        string staging = path + ".new";
+        try
+        {
+            using (var resource = typeof(Program).Assembly.GetManifestResourceStream(ShippedSettings)!)
+            using (var file = File.Create(staging))
+                resource.CopyTo(file);
+            File.Move(staging, path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Cannot write {path}: {e.Message}");
+        }
     }
 
     /// <summary>Read once at start, with the layout config's rules. A file that will not parse is reported and ignored.</summary>
     private static Settings ReadSettings()
     {
-        string path = Path.Combine(AppContext.BaseDirectory, "settings.json");
+        string path = SettingsPath;
         if (!File.Exists(path)) return new();
         try
         {
