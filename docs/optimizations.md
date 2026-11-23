@@ -46,7 +46,7 @@ When Windows turns the monitors off, the panel goes dark and nothing is polled u
 ## Looked at, not done
 
 - **Precompiling (ReadyToRun):** more memory, not less, in a self-contained single-file exe.
-- **Native AOT:** LibreHardwareMonitor relies on reflection.
+- **Native AOT:** it works, and would save about 15 MB of memory with no change in CPU use, but only by running Windows Forms under Native AOT, which Microsoft does not support. Not worth that risk for now.
 - **Pre-rendering widgets that never change:** about 0.1% of one core saved, for code whose failure mode is a wrong picture.
 - **A bare Win32 tray menu:** a few MB less than WinForms, for about 150 lines of interop.
 - **Avoiding the CPU poll's per-core wake-ups:** the whole app adds only 4-5% to the CPU's idle wake-ups; not worth AMD-only special code.
