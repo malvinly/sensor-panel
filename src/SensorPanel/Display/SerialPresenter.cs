@@ -7,7 +7,7 @@ namespace SensorPanel.Display;
 /// Sends frames to the panel over its virtual COM port, transmitting only what changed.
 ///
 /// The panel accepts exactly 128 bytes per millisecond no matter how it is fed (see
-/// docs/transport-comparison.md), so the only lever is sending fewer bytes. Each frame is
+/// docs/optimizations.md), so the only lever is sending fewer bytes. Each frame is
 /// diffed against the last one sent on an 8x8 tile grid and only dirty tiles go out, merged
 /// into rectangles.
 /// </summary>

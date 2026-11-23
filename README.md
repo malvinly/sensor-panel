@@ -37,7 +37,9 @@ A key whose sensor is not found shows `--` in text and leaves bars, gauges and g
 - **Sensors:** read with LibreHardwareMonitor, the open-source hardware-monitoring library. An NVIDIA GPU is read through NVML instead (see [settings.json](docs/guide.md#settingsjson)).
 - **Layout:** six widget types drawn with SkiaSharp, bound to sensors by key name.
 - **Tray:** a WinForms notification icon and menu.
-- **Display:** only the pixels that changed are sent. Why, with measurements: [docs/transport-comparison.md](docs/transport-comparison.md).
+- **Display:** only the pixels that changed are sent.
+
+Why these choices, and the others that keep it light: [docs/optimizations.md](docs/optimizations.md).
 
 Windows only. Five layouts ship inside the exe: the default dashboard ([default-sample.json](src/SensorPanel/Configs/default-sample.json)), a deliberately different portrait one ([portrait-sample.json](src/SensorPanel/Configs/portrait-sample.json)), a framed photo slideshow ([slideshow-sample.json](src/SensorPanel/Configs/slideshow-sample.json)) and two at-a-glance CPU, GPU and RAM monitors with big numbers and load graphs, as rows ([simple-rows.json](src/SensorPanel/Configs/simple-rows.json)) or columns ([simple-columns.json](src/SensorPanel/Configs/simple-columns.json)).
 

@@ -230,7 +230,7 @@ Slideshow notes:
 
 ### Designing for this panel
 
-The panel accepts 128,000 bytes per second, about two fifths of the screen, no matter how it is driven. The first frame takes 2.4 s; after that only changed pixels are sent, so a layout stays responsive as long as the area that changes each second is modest. Big elements that change every tick (a seconds counter in huge type, a full-width graph) are what to avoid. `--verbose` shows the bytes sent per frame.
+The panel accepts 128,000 bytes per second, about two fifths of the screen, no matter how it is driven. The first frame takes 2.4 s; after that only changed pixels are sent, so a layout stays responsive as long as the area that changes each second is modest. Big elements that change every tick (a seconds counter in huge type, a full-width graph) are what to avoid. `--verbose` shows the bytes sent per frame. Why it works this way: [Optimizations](optimizations.md#sending-pixels-to-the-panel).
 
 ## Sensor keys
 

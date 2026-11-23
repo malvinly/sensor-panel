@@ -7,7 +7,7 @@ namespace SensorPanel;
 
 /// <summary>
 /// `SensorPanel bench` — transport measurements against the real panel.
-/// This is the harness behind docs/transport-comparison.md; it is not used by the dashboard.
+/// It measured the panel's throughput summed up in docs/optimizations.md; it is not used by the dashboard.
 /// </summary>
 public static class Bench
 {
