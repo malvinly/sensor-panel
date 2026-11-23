@@ -12,6 +12,8 @@ namespace SensorPanel.Sensors;
 ///
 /// An NVIDIA GPU is read through <see cref="Nvml"/> instead. LHM then does not open the GPU
 /// at all, so the GPU lines of Maps find nothing. "lhmGpu" in settings.json turns that off.
+///
+/// "fps" comes from <see cref="FrameCounter"/>, which is only started while a widget shows it.
 /// </summary>
 public sealed class SensorHub : IDisposable
 {
@@ -81,6 +83,7 @@ public sealed class SensorHub : IDisposable
     private long _tick;
     private bool _disk;                         // a disk.* key is in use
     private long _diskDue;                      // Environment.TickCount64 at which disk space is read again; 0 = next tick
+    private FrameCounter? _fps;                 // open only while a widget shows "fps"
 
     /// <summary>The first segment of each hardware key ("cpu", "gpu", ...): what sensorIntervals can name.</summary>
     public static IEnumerable<string> Groups => Maps.Select(m => Group(m.Key)).Distinct();
@@ -168,6 +171,9 @@ public sealed class SensorHub : IDisposable
         Snapshot.Clear();   // a key the new config no longer reads would otherwise keep its last value
         (_bound, _polled, _nvmlKeys, _nvmlEvery, _tick) = (bound, polled, nvmlKeys, nvmlEvery, 0);     // tick 0 polls every device
         (_disk, _diskDue) = (used.Any(k => Group(k) == "disk"), 0);     // and the disk, since its keys were just cleared
+
+        if (used.Contains("fps")) _fps ??= FrameCounter.Start();
+        else { _fps?.Dispose(); _fps = null; }
     }
 
     public void Update()
@@ -185,6 +191,8 @@ public sealed class SensorHub : IDisposable
             else Snapshot.Remove(key);
         }
         if (_tick % _nvmlEvery == 0) _nvml?.Read(_nvmlKeys, Snapshot);
+        if (_fps?.Read() is double fps) Snapshot["fps"] = fps;
+        else Snapshot.Remove("fps");
         _tick++;
         AddDerived();
     }
@@ -263,6 +271,7 @@ public sealed class SensorHub : IDisposable
     {
         _computer.Close();
         _nvml?.Dispose();
+        _fps?.Dispose();
     }
 }
 
