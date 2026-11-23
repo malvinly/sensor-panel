@@ -9,6 +9,10 @@ namespace SensorPanel.Sensors;
 /// ETW session. That event fires once per Present for every graphics API (D3D9-12, Vulkan, OpenGL),
 /// in the presenting process. Starting the session needs administrator rights.
 ///
+/// TODO: test a Vulkan game (and ideally an OpenGL one). Checked so far: D3D11 test windows
+/// (flip and blt model) and Kingdom Come, where event 184 matched the game's DXGI presents one for one
+/// and the reading matched NVIDIA's overlay (120 fps). Vulkan and OpenGL are not yet confirmed.
+///
 /// What it cannot see: apps that draw through DirectComposition (browsers, Electron) present
 /// nothing and read "--", as do UWP apps whose window belongs to ApplicationFrameHost. A process
 /// that presents to several windows or swap chains reads their sum.
