@@ -5,7 +5,7 @@ A Windows system monitor for the small USB screen on my desk, a Turing Smart Scr
 <table>
   <tr>
     <td align="center"><img src="docs/images/default-sample.png" width="480" alt="The default dashboard"><br><sub>The default dashboard (<code>default-sample.json</code>)</sub></td>
-    <td align="center"><img src="docs/images/simple-columns.png" width="480" alt="Simple columns"><br><sub>Simple columns (<code>simple-columns.json</code>)</sub></td>
+    <td align="center"><img src="docs/images/gaming.png" width="480" alt="The gaming layout"><br><sub>Gaming, with the game's frames per second (<code>gaming.json</code>)</sub></td>
   </tr>
 </table>
 
@@ -41,7 +41,7 @@ A key whose sensor is not found shows `--` in text and leaves bars, gauges and g
 
 Why these choices, and the others that keep it light: [docs/optimizations.md](docs/optimizations.md).
 
-Windows only. Five layouts ship inside the exe: the default dashboard ([default-sample.json](src/SensorPanel/Configs/default-sample.json)), a deliberately different portrait one ([portrait-sample.json](src/SensorPanel/Configs/portrait-sample.json)), a framed photo slideshow ([slideshow-sample.json](src/SensorPanel/Configs/slideshow-sample.json)) and two at-a-glance CPU, GPU and RAM monitors with big numbers and load graphs, as rows ([simple-rows.json](src/SensorPanel/Configs/simple-rows.json)) or columns ([simple-columns.json](src/SensorPanel/Configs/simple-columns.json)).
+Windows only. Six layouts ship inside the exe: the default dashboard ([default-sample.json](src/SensorPanel/Configs/default-sample.json)), a deliberately different portrait one ([portrait-sample.json](src/SensorPanel/Configs/portrait-sample.json)), a framed photo slideshow ([slideshow-sample.json](src/SensorPanel/Configs/slideshow-sample.json)), two at-a-glance CPU, GPU and RAM monitors with big numbers and load graphs, as rows ([simple-rows.json](src/SensorPanel/Configs/simple-rows.json)) or columns ([simple-columns.json](src/SensorPanel/Configs/simple-columns.json)), and one for gaming led by a big frames-per-second readout ([gaming.json](src/SensorPanel/Configs/gaming.json)).
 
 ## Quick start
 

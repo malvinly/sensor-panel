@@ -29,16 +29,19 @@ if (root is null)
 var configs = Path.Combine(root.FullName, "src", "SensorPanel", "Configs");
 var images = Path.Combine(root.FullName, "docs", "images");
 Render(Path.Combine(configs, "default-sample.json"), Path.Combine(images, "default-sample.png"));
-Render(Path.Combine(configs, "simple-columns.json"), Path.Combine(images, "simple-columns.png"));
+Render(Path.Combine(configs, "gaming.json"), Path.Combine(images, "gaming.png"), gaming: true);
 return 0;
 
-static void Render(string configPath, string outPath)
+/// <param name="gaming">Overlay the values of a game in progress: see <see cref="Game"/>.</param>
+static void Render(string configPath, string outPath, bool gaming = false)
 {
     configPath = Path.GetFullPath(configPath);
     using var renderer = new Renderer(Config.Load(configPath), Path.GetDirectoryName(configPath)!);
 
-    // A fixed seed, so the same config gives the same picture.
+    // Fixed seeds, so the same config gives the same picture. The game has its own, so that
+    // overlaying it leaves the other values, and the other screenshots, as they were.
     var rng = new Random(7);
+    var game = new GameState(new Random(11));
     var s = new Dictionary<string, double>();
     double cpu = 18, gpu = 35, net = 8;
 
@@ -73,6 +76,7 @@ static void Render(string configPath, string outPath)
         s["uptime.days"] = 2;
         s["uptime.hours"] = 7;
         s["uptime.minutes"] = 41;
+        if (gaming) Game(game, tick, s);
 
         renderer.Render(s);
     }
@@ -80,4 +84,33 @@ static void Render(string configPath, string outPath)
     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
     new PngPresenter(Path.GetFullPath(outPath)).Present(renderer.Frame);
     Console.WriteLine($"Wrote {outPath}");
+}
+
+// A GPU-bound game near a 120 fps cap: the GPU in the 80s and 90s, a few seconds where it hits 99%
+// and the frame rate dips, one stuttered frame, and the CPU, power and memory to go with it.
+static void Game(GameState game, int tick, Dictionary<string, double> s)
+{
+    bool dip = tick is >= 52 and < 58;
+    game.Cpu = Math.Clamp(game.Cpu + game.Rng.NextDouble() * 8 - 4, 24, 58);
+    game.Gpu = dip ? 99 : Math.Clamp(game.Gpu + game.Rng.NextDouble() * 6 - 3, 82, 98);
+
+    s["fps"] = dip ? 74 + game.Rng.NextDouble() * 8 : tick == 80 ? 41 : 116 + game.Rng.NextDouble() * 4;
+    s["cpu.load"] = game.Cpu;
+    s["cpu.temp"] = 58 + game.Cpu * 0.35;
+    s["cpu.power"] = 62 + game.Cpu * 1.1;
+    s["gpu.load"] = game.Gpu;
+    s["gpu.temp"] = 52 + game.Gpu * 0.17;
+    s["gpu.power"] = 120 + game.Gpu * 1.6;
+    s["gpu.mem.used"] = 9.4 + game.Gpu / 100;
+    s["mem.used"] = 19.6;
+    s["mem.free"] = 11.5;
+    s["mem.total"] = 31.1;
+    s["mem.load"] = 63;
+}
+
+sealed class GameState(Random rng)
+{
+    public Random Rng { get; } = rng;
+    public double Cpu { get; set; } = 38;
+    public double Gpu { get; set; } = 93;
 }

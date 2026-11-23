@@ -46,6 +46,7 @@
     <EmbeddedResource Include="Configs\slideshow-sample.json" LogicalName="configs/slideshow-sample.json" />
     <EmbeddedResource Include="Configs\simple-rows.json" LogicalName="configs/simple-rows.json" />
     <EmbeddedResource Include="Configs\simple-columns.json" LogicalName="configs/simple-columns.json" />
+    <EmbeddedResource Include="Configs\gaming.json" LogicalName="configs/gaming.json" />
     <EmbeddedResource Include="Configs\media\slides\*.png" LogicalName="configs/media/slides/%(Filename)%(Extension)" />
   </ItemGroup>
 
