@@ -28,8 +28,8 @@ if (root is null)
 }
 var configs = Path.Combine(root.FullName, "src", "SensorPanel", "Configs");
 var images = Path.Combine(root.FullName, "docs", "images");
-Render(Path.Combine(configs, "default.json"), Path.Combine(images, "default.png"));
-Render(Path.Combine(configs, "gaming.json"), Path.Combine(images, "gaming.png"), gaming: true);
+Render(Path.Combine(configs, "default", "default.json"), Path.Combine(images, "default.png"));
+Render(Path.Combine(configs, "gaming", "gaming.json"), Path.Combine(images, "gaming.png"), gaming: true);
 return 0;
 
 /// <param name="gaming">Overlay the values of a game in progress: see <see cref="Game"/>.</param>

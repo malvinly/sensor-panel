@@ -77,6 +77,13 @@ public sealed class Config
         return Path.GetFileNameWithoutExtension(path);
     }
 
+    /// <summary>
+    /// The configs in a configs folder: every .json directly inside one of its subfolders. Each
+    /// config keeps the pictures it draws in its own folder, so copying the folder copies all of it.
+    /// </summary>
+    public static string[] Files(string configs) =>
+        Directory.GetDirectories(configs).SelectMany(dir => Directory.GetFiles(dir, "*.json")).ToArray();
+
     /// <summary>Configs in tray menu order: by display name, then by path when two names are the same.</summary>
     public static List<(string Path, string Name)> ByName(IEnumerable<string> paths) =>
         paths.Select(p => (Path: p, Name: DisplayName(p)))

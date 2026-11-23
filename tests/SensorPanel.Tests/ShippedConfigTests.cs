@@ -18,8 +18,10 @@ public class ShippedConfigTests
         }
     }
 
+    /// <summary>Each as "folder/file.json", relative to <see cref="ConfigsFolder"/>.</summary>
     private static string[] ConfigFiles() =>
-        Directory.GetFiles(ConfigsFolder, "*.json").Select(p => Path.GetFileName(p)!).Order(StringComparer.Ordinal).ToArray();
+        Config.Files(ConfigsFolder).Select(p => Path.GetRelativePath(ConfigsFolder, p).Replace('\\', '/'))
+              .Order(StringComparer.Ordinal).ToArray();
 
     public static TheoryData<string> Configs() => new(ConfigFiles());
 
@@ -29,7 +31,8 @@ public class ShippedConfigTests
     public void The_folder_has_the_six_known_layouts()
     {
         // A layout added, renamed or removed fails here on purpose: the README lists them by name.
-        Assert.Equal(["default.json", "gaming.json", "portrait.json", "simple-columns.json", "simple-rows.json", "slideshow.json"], ConfigFiles());
+        Assert.Equal(["default/default.json", "gaming/gaming.json", "portrait/portrait.json", "simple-columns/simple-columns.json",
+                      "simple-rows/simple-rows.json", "slideshow/slideshow.json"], ConfigFiles());
     }
 
     [Theory]
@@ -58,10 +61,10 @@ public class ShippedConfigTests
     [MemberData(nameof(Configs))]
     public void Renders_with_no_sensors_and_with_every_sensor(string file)
     {
-        // Also finds each layout's pictures: Renderer throws IOException when one is missing.
+        // Also finds each layout's pictures in its own folder: Renderer throws IOException when one is missing.
         string path = Path.Combine(ConfigsFolder, file);
         var config = Config.Load(path);
-        using var renderer = new Renderer(config, ConfigsFolder);
+        using var renderer = new Renderer(config, Path.GetDirectoryName(path)!);
 
         Assert.True(renderer.Render(new Dictionary<string, double>()), "the first frame is always drawn");
 

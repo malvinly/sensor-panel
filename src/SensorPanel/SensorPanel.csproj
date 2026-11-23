@@ -44,9 +44,9 @@
   <ItemGroup>
     <!-- Only the default layout travels inside the exe; it is written to a configs folder beside it on first run.
          Program.WriteDefaultConfigs extracts every resource whose name starts with "configs/".
-         The other layouts in Configs stay in the repository, to be copied by hand. -->
-    <EmbeddedResource Include="Configs\default.json" LogicalName="configs/default.json" />
-    <EmbeddedResource Include="Configs\media\background.png" LogicalName="configs/media/background.png" />
+         The other layouts in Configs stay in the repository, to be copied by hand, one folder each. -->
+    <EmbeddedResource Include="Configs\default\default.json" LogicalName="configs/default/default.json" />
+    <EmbeddedResource Include="Configs\default\background.png" LogicalName="configs/default/background.png" />
   </ItemGroup>
 
 </Project>

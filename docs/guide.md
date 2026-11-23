@@ -6,22 +6,24 @@ The details behind the [README](../README.md): running the app, the config forma
 
 Right-click the icon for the menu:
 
-- **The configs.** Every `.json` file in the `configs` folder beside the exe, listed by its `name` (or its file name if it has none) in alphabetical order, with a tick on the one that is running. Picking one switches the panel to it without a restart, and it is remembered (in `last-config.txt` beside the exe) for the next start. The folder is read each time the menu opens, so a file you add appears straight away. Picking the ticked config again reloads it, which is how an edit is applied.
+- **The configs.** Every `.json` file directly inside a subfolder of the `configs` folder beside the exe (one folder per config, such as `configs/default/default.json`, see [Which config runs](#which-config-runs)), listed by its `name` (or its file name if it has none) in alphabetical order, with a tick on the one that is running. Picking one switches the panel to it without a restart, and it is remembered (in `last-config.txt` beside the exe) for the next start. The folder is read each time the menu opens, so a config folder you add appears straight away. Picking the ticked config again reloads it, which is how an edit is applied.
 - **Show log.** Opens `SensorPanel.log`, also beside the exe and started afresh on every run. Every message the app logs goes there. Warnings (a missing PawnIO driver, panel unavailable, a config that will not load) also pop up as a notification.
 - **Exit.** Turns the panel's screen off, then quits. The next start turns it back on.
 
 ## Which config runs
 
-On first start the exe creates the `configs` folder and writes the one shipped layout, `default.json`, and its background picture into it. Delete the folder to get the original back. The other layouts are only in the repository: to use one, copy its `.json` from [src/SensorPanel/Configs](../src/SensorPanel/Configs) into the `configs` folder (for `slideshow.json`, also copy the `media/slides` folder of photos it shows).
+Each config has a folder of its own inside `configs`, holding the `.json` file and the pictures it draws, so copying the folder copies everything the config needs. A `.json` file directly in `configs`, outside a folder of its own, is not listed; one left there by an older version of the app can be moved into a new folder, with any pictures it draws, and its `path` and `folder` values changed to match (see [`image`](#image-picture-or-slideshow)).
+
+On first start the exe creates the `configs` folder and writes the one shipped layout into it: the `default` folder, with `default.json` and its background picture. Delete the `configs` folder to get the original back. The other layouts are only in the repository: to use one, copy its folder from [src/SensorPanel/Configs](../src/SensorPanel/Configs) into the `configs` folder.
 
 At each start the app runs, in order:
 
 1. the `--config` file, if one was given;
 2. the config last picked from the menu;
-3. `default.json`;
+3. `default/default.json`;
 4. if that has been deleted, the first config in the menu.
 
-If the `configs` folder has no `.json` files left at all, `default.json` (and `media/background.png`, which it draws, if that is missing too) is written back first.
+If the `configs` folder has no configs left at all, `default/default.json` (and `default/background.png`, which it draws, if that is missing too) is written back first.
 
 A config that fails to load is reported, whatever was running carries on, and the failed one is not remembered. If the config to start with will not load, the default (3 or 4 above) is tried instead; if that fails too (for example it has been broken by an edit), the panel shows nothing until you pick a config that loads.
 
@@ -71,7 +73,7 @@ The exe is a windowed program with no console of its own. Started from a termina
 - Redirecting to a file (`> sensors.txt`) works too.
 - Ctrl+C in that terminal stops the app the same way Exit does.
 
-During development, from an elevated terminal at the repository root: `dotnet run --project src/SensorPanel -c Release -- --config src/SensorPanel/Configs/default.json`. `sensor-panel.slnx` opens the projects in Visual Studio.
+During development, from an elevated terminal at the repository root: `dotnet run --project src/SensorPanel -c Release -- --config src/SensorPanel/Configs/default/default.json`. `sensor-panel.slnx` opens the projects in Visual Studio.
 
 `src/SensorPanel.Screenshots` renders configs with made-up sensor values and a fixed clock, through the app's own renderer, so it needs no panel, sensors or administrator rights. `dotnet run --project src/SensorPanel.Screenshots` regenerates the README screenshots in `docs/images`; `dotnet run --project src/SensorPanel.Screenshots -- path\to\config.json out.png` renders any config.
 
@@ -212,7 +214,7 @@ Extra sources are not reported: `clock` wins over `sensors`, `sensors` over `sen
 
 ### `image`: picture or slideshow
 
-Give exactly one of `path` and `folder`. The tray menu lists only the `.json` files directly in `configs`, so keep pictures in a subfolder; the shipped configs use `configs/media` (`"path": "media/background.png"`).
+Give exactly one of `path` and `folder`. Both are relative to the config file, so keep a config's pictures in its own folder, beside the `.json` or in a subfolder of it; copying the folder then copies them too. The shipped configs do: `default` has `"path": "background.png"`, and `slideshow` has `"folder": "slides"`.
 
 | Property | Default | |
 |---|---|---|

@@ -15,7 +15,7 @@ public class EmbeddedConfigTests
     {
         // The csproj's LogicalNames; Program writes out every resource under "configs/".
         var names = typeof(Config).Assembly.GetManifestResourceNames().Order().ToArray();
-        Assert.Equal(["configs/default.json", "configs/media/background.png"], names);
+        Assert.Equal(["configs/default/background.png", "configs/default/default.json"], names);
     }
 
     [Fact]
@@ -25,8 +25,9 @@ public class EmbeddedConfigTests
         string configs = Path.Combine(dir.Path, "configs");
         Program.WriteDefaultConfigs(configs);
 
-        var config = Config.Load(Path.Combine(configs, "default.json"));
-        using var renderer = new Renderer(config, configs);     // throws if background.png is not where the layout looks
+        string folder = Path.Combine(configs, "default");
+        var config = Config.Load(Path.Combine(folder, "default.json"));
+        using var renderer = new Renderer(config, folder);     // throws if background.png is not where the layout looks
         Assert.True(renderer.Render(new Dictionary<string, double>()));
     }
 
@@ -35,9 +36,9 @@ public class EmbeddedConfigTests
     {
         using var dir = new TempDirectory();
         string configs = Directory.CreateDirectory(Path.Combine(dir.Path, "configs")).FullName;
-        string path = Program.DefaultConfig(configs);     // an empty folder: default.json is written back
+        string path = Program.DefaultConfig(configs);     // an empty folder: default/default.json is written back
 
-        using var renderer = new Renderer(Config.Load(path), configs);
+        using var renderer = new Renderer(Config.Load(path), Path.GetDirectoryName(path)!);
         Assert.True(renderer.Render(new Dictionary<string, double>()));
     }
 }

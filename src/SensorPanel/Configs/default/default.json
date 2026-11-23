@@ -8,7 +8,7 @@
   "brightness": 20,
   "background": "#000000",
   "widgets": [
-    { "type": "image", "path": "media/background.png", "x": 0, "y": 0 },
+    { "type": "image", "path": "background.png", "x": 0, "y": 0 },
 
     // ── Clock ───────────────────────────────────────────────────────────────
     { "type": "panel", "x": 8, "y": 8, "w": 224, "h": 112, "radius": 10,

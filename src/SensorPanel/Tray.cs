@@ -54,14 +54,14 @@ internal sealed class Tray : IDisposable
     public void Post(Action action) => _window.BeginInvoke(action);
 
     /// <summary>
-    /// Rebuilt every time, so a config dropped into the folder, or a renamed one, shows without a
+    /// Rebuilt every time, so a config folder dropped into configs, or a renamed config, shows without a
     /// restart. Each config is listed by its "name", or its file name if it has none.
     /// </summary>
     private void BuildMenu()
     {
         _menu.Items.Clear();
 
-        var configs = Directory.Exists(_configsDirectory) ? Directory.GetFiles(_configsDirectory, "*.json").ToList() : [];
+        var configs = Directory.Exists(_configsDirectory) ? Config.Files(_configsDirectory).ToList() : [];
         // A config started with --config from somewhere else is listed too, so something is ticked.
         if (_active is not null && !configs.Contains(_active, StringComparer.OrdinalIgnoreCase)) configs.Add(_active);
 
@@ -99,8 +99,10 @@ internal sealed class Tray : IDisposable
     private void Remember(string path)
     {
         if (_lastConfigFile is null) return;
-        if (!Path.GetDirectoryName(path)!.Equals(_configsDirectory, StringComparison.OrdinalIgnoreCase)) return;
-        try { File.WriteAllText(_lastConfigFile, Path.GetFileName(path)); }
+        // Only one in the menu's folders: "default\default.json", relative to the configs folder.
+        if (Path.GetDirectoryName(Path.GetDirectoryName(path)) is not { } parent
+            || !parent.Equals(_configsDirectory, StringComparison.OrdinalIgnoreCase)) return;
+        try { File.WriteAllText(_lastConfigFile, Path.GetRelativePath(_configsDirectory, path)); }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             Log.Warn($"Cannot remember the selection in {_lastConfigFile}: {e.Message}");

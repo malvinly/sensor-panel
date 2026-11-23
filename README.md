@@ -28,7 +28,7 @@ It is shared as is. It will probably run on other Windows PCs with the same pane
 - **The GPU.** An NVIDIA card is read through NVML, the monitoring library in NVIDIA's driver, which uses the first NVIDIA card. Other GPUs are read through LibreHardwareMonitor, which is untested here; with an AMD or Intel card plus an integrated GPU, pin the right one with `Device:` (see [Adding a key](docs/guide.md#adding-a-key)).
 - **Network.** `net.*` reads the adapter named `Ethernet`: the `Device: "Ethernet"` text in `Maps`. Wi-Fi adapters are usually named `Wi-Fi`; `SensorPanel sensors` lists yours under Network.
 - **Disk.** `disk.*` is drive `C:`, set by `new DriveInfo("C")` in `AddDerived()` in the same file. The default layout labels it SSD.
-- **The layouts.** Ranges are set for this hardware: the VRAM bar tops out at 16 GB and the network graphs at 30 MB/s ([default.json](src/SensorPanel/Configs/default.json)), and the GPU temperature gauge and graph cover 20-90 °C ([default.json](src/SensorPanel/Configs/default.json), [portrait.json](src/SensorPanel/Configs/portrait.json)).
+- **The layouts.** Ranges are set for this hardware: the VRAM bar tops out at 16 GB and the network graphs at 30 MB/s ([default.json](src/SensorPanel/Configs/default/default.json)), and the GPU temperature gauge and graph cover 20-90 °C ([default.json](src/SensorPanel/Configs/default/default.json), [portrait.json](src/SensorPanel/Configs/portrait/portrait.json)).
 
 A key whose sensor is not found shows `--` in text and leaves bars, gauges and graphs empty, with no warning. Run `SensorPanel sensors` (elevated, see [Command line](docs/guide.md#command-line)) and check which keys are missing from "Keys available to widgets"; [Adding a key](docs/guide.md#adding-a-key) shows how to point a key at a different sensor.
 
@@ -41,7 +41,7 @@ A key whose sensor is not found shows `--` in text and leaves bars, gauges and g
 
 Why these choices, and the others that keep it light: [docs/optimizations.md](docs/optimizations.md).
 
-Windows only. Six layouts are in the repository: the default dashboard ([default.json](src/SensorPanel/Configs/default.json)), a deliberately different portrait one ([portrait.json](src/SensorPanel/Configs/portrait.json)), a framed photo slideshow ([slideshow.json](src/SensorPanel/Configs/slideshow.json)), two at-a-glance CPU, GPU and RAM monitors with big numbers and load graphs, as rows ([simple-rows.json](src/SensorPanel/Configs/simple-rows.json)) or columns ([simple-columns.json](src/SensorPanel/Configs/simple-columns.json)), and one for gaming led by a big frames-per-second readout ([gaming.json](src/SensorPanel/Configs/gaming.json)). Only the default one ships inside the exe; the others are there to copy (see [Quick start](#quick-start)).
+Windows only. Six layouts are in the repository: the default dashboard ([default.json](src/SensorPanel/Configs/default/default.json)), a deliberately different portrait one ([portrait.json](src/SensorPanel/Configs/portrait/portrait.json)), a framed photo slideshow ([slideshow.json](src/SensorPanel/Configs/slideshow/slideshow.json)), two at-a-glance CPU, GPU and RAM monitors with big numbers and load graphs, as rows ([simple-rows.json](src/SensorPanel/Configs/simple-rows/simple-rows.json)) or columns ([simple-columns.json](src/SensorPanel/Configs/simple-columns/simple-columns.json)), and one for gaming led by a big frames-per-second readout ([gaming.json](src/SensorPanel/Configs/gaming/gaming.json)). Only the default one ships inside the exe; the others are there to copy (see [Quick start](#quick-start)).
 
 ## Quick start
 
@@ -57,9 +57,9 @@ There is no prebuilt download. Build the single exe, from the repository root:
 dotnet publish src/SensorPanel -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
 
-The result is `src\SensorPanel\bin\Release\net10.0-windows\win-x64\publish\SensorPanel.exe` (about 130 MB; it carries the .NET runtime and WinForms). Copy that one file anywhere and run it. Windows asks for administrator rights every time it starts (why, and how to avoid the prompt: [Getting every sensor](docs/guide.md#getting-every-sensor)). There is no window: look for the icon in the notification area, and right-click it to switch layouts. On first start the exe writes the default layout (`default.json` and its background picture) into a `configs` folder beside itself; edit it or add your own.
+The result is `src\SensorPanel\bin\Release\net10.0-windows\win-x64\publish\SensorPanel.exe` (about 130 MB; it carries the .NET runtime and WinForms). Copy that one file anywhere and run it. Windows asks for administrator rights every time it starts (why, and how to avoid the prompt: [Getting every sensor](docs/guide.md#getting-every-sensor)). There is no window: look for the icon in the notification area, and right-click it to switch layouts. On first start the exe writes the default layout (a `default` folder with `default.json` and its background picture) into a `configs` folder beside itself; edit it or add your own, one folder per layout.
 
-The other layouts are not in the exe. To use one, copy its `.json` file from [src/SensorPanel/Configs](src/SensorPanel/Configs) into that `configs` folder, and it appears in the tray menu. `slideshow.json` also needs the `media/slides` folder of photos it shows, copied to `configs/media/slides`.
+The other layouts are not in the exe. To use one, copy its folder (such as `gaming`) from [src/SensorPanel/Configs](src/SensorPanel/Configs) into that `configs` folder, and it appears in the tray menu. Each folder holds everything its layout needs, such as the photos the slideshow shows.
 
 Everything else is in [docs/guide.md](docs/guide.md): the tray menu, sensors that need administrator rights, the command line, `settings.json`, the config format, the sensor keys, and adding sensors and widget types.
 

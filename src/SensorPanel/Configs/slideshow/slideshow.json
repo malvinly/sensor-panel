@@ -2,7 +2,7 @@
   // A framed slideshow with a clock and a few readouts. See docs/guide.md for the full schema.
   // The photo changes every 10 s. It is 320x240 = 153,600 bytes, so each change is a 1.2 s
   // top-to-bottom wipe inside the frame; a full-screen photo would take 2.4 s.
-  // Put your own .png / .jpg files in the "media\slides" folder beside this file.
+  // Put your own .png / .jpg files in the "slides" folder beside this file.
   "name": "Slideshow",
   "refreshMs": 1000,
   "orientation": "landscape",
@@ -11,7 +11,7 @@
   "widgets": [
     // ── Photo ───────────────────────────────────────────────────────────────
     { "type": "panel", "x": 6, "y": 6, "w": 324, "h": 244, "radius": 4, "fill": "#1E2636" },
-    { "type": "image", "folder": "media/slides", "intervalSeconds": 10, "x": 8, "y": 8, "w": 320, "h": 240 },
+    { "type": "image", "folder": "slides", "intervalSeconds": 10, "x": 8, "y": 8, "w": 320, "h": 240 },
 
     // ── Clock ───────────────────────────────────────────────────────────────
     { "type": "panel", "x": 338, "y": 6, "w": 136, "h": 78, "radius": 10,

@@ -119,22 +119,23 @@ internal static class Program
     private const string ShippedPrefix = "configs/";
 
     /// <summary>The config to start with when none has been picked from the menu.</summary>
-    private const string DefaultConfigName = "default.json";
+    private const string DefaultConfigName = "default/default.json";
 
     /// <summary>
     /// The config to start with when none was picked, and to fall back on when the one to start
-    /// with will not load: default.json, or if that has been deleted, the first config in
-    /// the menu. When the folder has no configs left at all, default.json is written back.
+    /// with will not load: default/default.json, or if that has been deleted, the first config in
+    /// the menu. When the folder has no configs left at all, default/default.json is written back.
     /// </summary>
     internal static string DefaultConfig(string configs)
     {
-        string path = Path.Combine(configs, DefaultConfigName);
+        // GetFullPath turns the "/" into "\", so the path matches the menu's when it is ticked.
+        string path = Path.GetFullPath(Path.Combine(configs, DefaultConfigName));
         if (File.Exists(path)) return path;
         // No folder means the first-run write failed. Writing only the default here would make the
         // folder exist, and the complete write would then never be tried again.
         if (!Directory.Exists(configs)) return path;
         string[] others;
-        try { others = Directory.GetFiles(configs, "*.json"); }
+        try { others = Config.Files(configs); }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             Log.Warn($"Cannot list the configs in {configs}: {e.Message}");
@@ -146,14 +147,14 @@ internal static class Program
     }
 
     /// <summary>
-    /// Writes default.json back from the exe, with media/background.png, the picture it
+    /// Writes default/default.json back from the exe, with default/background.png, the picture it
     /// draws, if that is missing too.
     /// </summary>
     private static void RestoreDefaultConfig(string configs)
     {
         try
         {
-            foreach (var file in new[] { DefaultConfigName, "media/background.png" })
+            foreach (var file in new[] { DefaultConfigName, "default/background.png" })
             {
                 string path = Path.Combine(configs, file);
                 if (File.Exists(path)) continue;
@@ -171,8 +172,8 @@ internal static class Program
     }
 
     /// <summary>
-    /// First run from a fresh copy of the exe: write the built-in layout (default.json and its
-    /// background) into the configs folder so it can be edited. They are written to a staging folder that is renamed at the end,
+    /// First run from a fresh copy of the exe: write the built-in layout (the default folder:
+    /// default.json and its background) into the configs folder so it can be edited. They are written to a staging folder that is renamed at the end,
     /// so the configs folder either does not exist or is complete.
     /// </summary>
     internal static void WriteDefaultConfigs(string configs)
