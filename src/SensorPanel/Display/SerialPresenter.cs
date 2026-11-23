@@ -25,7 +25,7 @@ public sealed class SerialPresenter : IPresenter
     private readonly byte[] _header = new byte[Protocol.OrientationSize];
     private readonly List<SKRectI> _rects = [];
     private readonly List<SKRectI> _open = [];
-    private string? _lastError;
+    private string? _lastError;             // null = connected, or not failed yet since start
 
     /// <summary>Pixel bytes sent by the most recent <see cref="Present"/> (for --verbose).</summary>
     public int LastBytes { get; private set; }
@@ -74,7 +74,12 @@ public sealed class SerialPresenter : IPresenter
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or TimeoutException)
         {
             // Unplugged, asleep, or held by another program. Drop the port and retry next frame.
-            if (e.Message != _lastError) Log.Warn($"Panel unavailable: {e.Message} (will keep retrying)");
+            // An unplug fails first on the write, then on finding the port: both are logged with
+            // their details, but only the first failure since the panel was last connected shows a
+            // balloon, and that one says only that the panel is unavailable.
+            if (e.Message != _lastError)
+                Log.Warn($"Panel unavailable: {e.Message} (will keep retrying)", notify: _lastError is null,
+                         balloon: "Panel unavailable (will keep retrying)");
             _lastError = e.Message;
             Close();
         }

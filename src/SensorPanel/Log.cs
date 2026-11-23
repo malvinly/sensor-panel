@@ -9,7 +9,7 @@ public static class Log
     private static readonly object Gate = new();
     private static StreamWriter? _file;
 
-    /// <summary>Raised for every warning, on whichever thread logged it.</summary>
+    /// <summary>Raised for every warning logged with notify set, on whichever thread logged it.</summary>
     public static event Action<string>? Warned;
 
     public static string? FilePath { get; private set; }
@@ -30,10 +30,12 @@ public static class Log
 
     public static void Info(string message) => Write(Console.Out, message);
 
-    public static void Warn(string message)
+    /// <param name="notify">False to log the warning without a tray balloon.</param>
+    /// <param name="balloon">The balloon's text, when it should be shorter than the logged message.</param>
+    public static void Warn(string message, bool notify = true, string? balloon = null)
     {
         Write(Console.Error, message);
-        Warned?.Invoke(message);
+        if (notify) Warned?.Invoke(balloon ?? message);
     }
 
     private static void Write(TextWriter console, string message)
