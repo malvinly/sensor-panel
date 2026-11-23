@@ -126,7 +126,7 @@ internal static class Program
     /// with will not load: default.json, or if that has been deleted, the first config in
     /// the menu. When the folder has no configs left at all, default.json is written back.
     /// </summary>
-    private static string DefaultConfig(string configs)
+    internal static string DefaultConfig(string configs)
     {
         string path = Path.Combine(configs, DefaultConfigName);
         if (File.Exists(path)) return path;
@@ -175,7 +175,7 @@ internal static class Program
     /// background) into the configs folder so it can be edited. They are written to a staging folder that is renamed at the end,
     /// so the configs folder either does not exist or is complete.
     /// </summary>
-    private static void WriteDefaultConfigs(string configs)
+    internal static void WriteDefaultConfigs(string configs)
     {
         if (Directory.Exists(configs)) return;
         string staging = configs + ".new";

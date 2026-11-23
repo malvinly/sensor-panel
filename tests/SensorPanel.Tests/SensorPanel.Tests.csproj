@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The same target and runtime as the app it references. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Only code that runs without sensors, the panel or admin rights is tested: Config, Renderer and
+         the widgets as they are, and a few parts the app makes internal (InternalsVisibleTo) or keeps
+         apart from Windows for this, such as FrameRate and SerialPresenter.FindDirtyRects. -->
+    <ProjectReference Include="..\..\src\SensorPanel\SensorPanel.csproj" />
+  </ItemGroup>
+
+</Project>

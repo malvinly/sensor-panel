@@ -64,7 +64,7 @@ public sealed class SerialPresenter : IPresenter
                 _configured = true;
             }
             var pixels = frame.GetPixelSpan();
-            FindDirtyRects(pixels, frame.Width, frame.Height);
+            FindDirtyRects(pixels, _shown, frame.Width, frame.Height, _rects, _open);
             foreach (var r in _rects) Send(pixels, frame.Width, r);
 
             _shown ??= new byte[pixels.Length];
@@ -125,31 +125,38 @@ public sealed class SerialPresenter : IPresenter
         Log.Info($"Panel connected on {name}");
     }
 
-    /// <summary>Fills <see cref="_rects"/> with tile-aligned rectangles covering every changed pixel.</summary>
-    private void FindDirtyRects(ReadOnlySpan<byte> pixels, int width, int height)
+    /// <summary>
+    /// Fills <paramref name="rects"/> with tile-aligned rectangles covering every pixel that differs
+    /// from <paramref name="shownBytes"/> (null = unknown: the whole frame). <paramref name="open"/> is
+    /// scratch space, a different list from <paramref name="rects"/>; both are cleared first, so they can be reused.
+    /// </summary>
+    internal static void FindDirtyRects(ReadOnlySpan<byte> pixels, byte[]? shownBytes, int width, int height,
+                                        List<SKRectI> rects, List<SKRectI> open)
     {
-        _rects.Clear();
-        _open.Clear();
-        if (_shown is null) { _rects.Add(new SKRectI(0, 0, width, height)); return; }
+        rects.Clear();
+        open.Clear();
+        if (shownBytes is null) { rects.Add(new SKRectI(0, 0, width, height)); return; }
 
-        ReadOnlySpan<byte> shown = _shown;
+        ReadOnlySpan<byte> shown = shownBytes;
         int stride = width * 2;
         for (int y = 0; y < height; y += Tile)
         {
             int bottom = Math.Min(y + Tile, height);
-            int firstOpen = _open.Count;    // rects opened by this band start here
+            int firstOpen = open.Count;     // rects opened by this band start here
 
             if (!pixels[(y * stride)..(bottom * stride)].SequenceEqual(shown[(y * stride)..(bottom * stride)]))
             {
-                // Horizontal runs of dirty tiles in this band.
+                // Horizontal runs of dirty tiles in this band. The last step is one past the edge,
+                // where nothing is dirty, so a run that reaches the edge is closed even when the
+                // width is not a whole number of tiles.
                 int runStart = -1;
-                for (int x = 0; x <= width; x += Tile)
+                for (int x = 0; x < width + Tile; x += Tile)
                 {
                     bool dirty = x < width && TileDiffers(pixels, shown, stride, x, Math.Min(x + Tile, width), y, bottom);
                     if (dirty && runStart < 0) runStart = x;
                     else if (!dirty && runStart >= 0)
                     {
-                        _open.Add(new SKRectI(runStart, y, Math.Min(x, width), bottom));
+                        open.Add(new SKRectI(runStart, y, Math.Min(x, width), bottom));
                         runStart = -1;
                     }
                 }
@@ -158,25 +165,25 @@ public sealed class SerialPresenter : IPresenter
             // Grow rects from the band above when a run has the same horizontal extent; close the rest.
             for (int i = firstOpen - 1; i >= 0; i--)
             {
-                var above = _open[i];
+                var above = open[i];
                 int match = -1;
-                for (int j = firstOpen; j < _open.Count; j++)
-                    if (_open[j].Left == above.Left && _open[j].Right == above.Right) { match = j; break; }
+                for (int j = firstOpen; j < open.Count; j++)
+                    if (open[j].Left == above.Left && open[j].Right == above.Right) { match = j; break; }
 
                 if (match >= 0)
                 {
-                    _open[i] = new SKRectI(above.Left, above.Top, above.Right, bottom);
-                    _open.RemoveAt(match);
+                    open[i] = new SKRectI(above.Left, above.Top, above.Right, bottom);
+                    open.RemoveAt(match);
                 }
                 else
                 {
-                    _rects.Add(above);
-                    _open.RemoveAt(i);
+                    rects.Add(above);
+                    open.RemoveAt(i);
                     firstOpen--;
                 }
             }
         }
-        _rects.AddRange(_open);
+        rects.AddRange(open);
     }
 
     private static bool TileDiffers(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b, int stride, int x0, int x1, int y0, int y1)

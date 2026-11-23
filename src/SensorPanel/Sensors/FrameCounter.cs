@@ -43,11 +43,7 @@ internal sealed class FrameCounter : IDisposable
     public bool Ended => _ended;
     private volatile bool _ended;
 
-    private readonly Lock _lock = new();
-    private volatile int _pid;          // the process whose presents are counted
-    private long _count, _lastStamp;    // presents since _pid was set, and the QPC time of the last one
-    private long _readCount, _readStamp;  // the same two at the previous Read that had frames
-    private double? _rate;
+    private readonly FrameRate _frameRate = new(Stopwatch.Frequency);
 
     private FrameCounter(ulong session, IntPtr properties, IntPtr loggerName) =>
         (_session, _properties, _loggerName) = (session, properties, loggerName);
@@ -114,36 +110,11 @@ internal sealed class FrameCounter : IDisposable
         return 0;
     }
 
-    /// <summary>
-    /// Frames per second of the foreground process, called once per tick. The rate is measured
-    /// between the events' own timestamps, not between calls: ETW delivers events in bursts, up to
-    /// FlushTimer (1 s) late, so a call can find no new frames. It then returns the previous rate,
-    /// until nothing has arrived for 3 s, which means the process stopped presenting: null.
-    /// When the foreground process changes, counting starts over: null for that call, and for the
-    /// next, which only takes the first timestamp to measure from. With no foreground window at all
-    /// (briefly, while switching windows), the current process goes on being counted.
-    /// </summary>
+    /// <summary>Frames per second of the foreground process, called once per tick: see <see cref="FrameRate.Read"/>.</summary>
     public double? Read()
     {
         GetWindowThreadProcessId(GetForegroundWindow(), out int pid);
-        lock (_lock)
-        {
-            if (pid != _pid && pid != 0)
-            {
-                _pid = pid;
-                (_count, _lastStamp, _readCount, _readStamp, _rate) = (0, 0, 0, 0, null);
-                return null;
-            }
-            if (_count > _readCount)
-            {
-                if (_readStamp != 0 && _lastStamp > _readStamp)
-                    _rate = (_count - _readCount) * (double)Stopwatch.Frequency / (_lastStamp - _readStamp);
-                (_readCount, _readStamp) = (_count, _lastStamp);
-            }
-            else if (Stopwatch.GetTimestamp() - _lastStamp > 3 * Stopwatch.Frequency)
-                (_rate, _readStamp) = (null, 0);    // the gap is not a frame time either
-            return _rate;
-        }
+        return _frameRate.Read(pid, Stopwatch.GetTimestamp());
     }
 
     private static void OnEvent(IntPtr record)
@@ -152,9 +123,7 @@ internal sealed class FrameCounter : IDisposable
         // The session is filtered to id 184; checking it too keeps a filter that is not honoured from counting other events as frames.
         if ((ushort)Marshal.ReadInt16(record, 40) != PresentEventId) return;
         var counter = (FrameCounter)GCHandle.FromIntPtr(Marshal.ReadIntPtr(record, 104)).Target!;
-        if (Marshal.ReadInt32(record, 12) != counter._pid) return;
-        long stamp = Marshal.ReadInt64(record, 16);
-        lock (counter._lock) { counter._count++; counter._lastStamp = stamp; }
+        counter._frameRate.Present(Marshal.ReadInt32(record, 12), Marshal.ReadInt64(record, 16));
     }
 
     public void Dispose()
@@ -229,7 +198,7 @@ internal sealed class FrameCounter : IDisposable
         Marshal.WriteInt32(p, 52, 2);               // MinimumBuffers
         Marshal.WriteInt32(p, 56, 16);              // MaximumBuffers
         Marshal.WriteInt32(p, 64, 0x100);           // LogFileMode: EVENT_TRACE_REAL_TIME_MODE
-        Marshal.WriteInt32(p, 68, 1);               // FlushTimer, s: the most an event waits to be delivered; Read's 3 s limit allows for it
+        Marshal.WriteInt32(p, 68, 1);               // FlushTimer, s: the most an event waits to be delivered; FrameRate.Read's 3 s limit allows for it
         Marshal.WriteInt32(p, 116, 120);            // LoggerNameOffset
         return p;
     }

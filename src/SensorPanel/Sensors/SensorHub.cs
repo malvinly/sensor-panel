@@ -7,15 +7,15 @@ namespace SensorPanel.Sensors;
 /// Widgets bind to these keys by name. A key that could not be read is simply absent.
 ///
 /// To add a key: either add a line to <see cref="Maps"/> (a LibreHardwareMonitor sensor,
-/// find its name with `SensorPanel sensors`), or compute it in <see cref="AddDerived"/> and
-/// list what it is computed from in <see cref="DerivedFrom"/>.
+/// find its name with `SensorPanel sensors`), or compute it in <see cref="AddDerived"/>, add it
+/// to <see cref="ComputedKeys"/>, and list what it is computed from in <see cref="DerivedFrom"/>.
 ///
 /// An NVIDIA GPU is read through <see cref="Nvml"/> instead. LHM then does not open the GPU
 /// at all, so the GPU lines of Maps find nothing. "lhmGpu" in settings.json turns that off.
 ///
 /// "fps" comes from <see cref="FrameCounter"/>, a source that costs something only while it runs,
 /// so <see cref="Configure"/> starts it only while a widget shows the key and stops it otherwise.
-/// A key like that is a third way to add one: a field, a few lines in Configure and Update, and a line in Dump.
+/// A key like that is a third way to add one: a field, a few lines in Configure and Update, a line in Dump, and one in ComputedKeys.
 /// </summary>
 public sealed class SensorHub : IDisposable
 {
@@ -141,15 +141,8 @@ public sealed class SensorHub : IDisposable
     /// </summary>
     public void Configure(int refreshMs, IReadOnlyDictionary<string, int> intervals, IEnumerable<string> keys)
     {
-        // A computed key needs the keys it is computed from.
-        var used = keys.SelectMany(k => DerivedFrom.GetValueOrDefault(k, []).Prepend(k)).ToHashSet();
-
-        // A group's interval can only slow its device down, and is rounded up to whole ticks.
-        int Every(string group)
-        {
-            int ms = Math.Max(refreshMs, intervals.GetValueOrDefault(group, refreshMs));
-            return (ms + refreshMs - 1) / refreshMs;
-        }
+        var used = KeysToRead(keys);
+        int Every(string group) => TicksPerPoll(refreshMs, intervals, group);
         var bound = _found.Where(f => used.Contains(f.Key)).Select(f => (f.Key, f.Sensor, f.Scale, Every: Every(Group(f.Key)))).ToList();
 
         List<string> nvmlKeys = _nvml is null ? [] : Nvml.Keys.Where(used.Contains).ToList();
@@ -177,6 +170,20 @@ public sealed class SensorHub : IDisposable
 
         if (_frames is { Ended: true } || !used.Contains("fps")) { _frames?.Dispose(); _frames = null; }
         if (used.Contains("fps")) _frames ??= FrameCounter.Start();
+    }
+
+    /// <summary>The keys widgets show, plus the keys a computed one among them is computed from.</summary>
+    internal static HashSet<string> KeysToRead(IEnumerable<string> keys) =>
+        keys.SelectMany(k => DerivedFrom.GetValueOrDefault(k, []).Prepend(k)).ToHashSet();
+
+    /// <summary>
+    /// How many ticks pass between polls of a key group's device: 1 = every tick. A group's
+    /// interval can only slow its device down, and is rounded up to whole ticks.
+    /// </summary>
+    internal static int TicksPerPoll(int refreshMs, IReadOnlyDictionary<string, int> intervals, string group)
+    {
+        int ms = Math.Max(refreshMs, intervals.GetValueOrDefault(group, refreshMs));
+        return (ms + refreshMs - 1) / refreshMs;
     }
 
     public void Update()
@@ -208,6 +215,19 @@ public sealed class SensorHub : IDisposable
     {
         ["mem.total"] = ["mem.used", "mem.free"],
     };
+
+    /// <summary>
+    /// Every key written by <see cref="AddDerived"/> and <see cref="Update"/> rather than read from
+    /// a sensor in <see cref="Maps"/>. Keep it in step with them: the tests check each shipped
+    /// layout's keys against this and <see cref="HardwareKeys"/>.
+    /// </summary>
+    internal static readonly string[] ComputedKeys =
+    [
+        "mem.total",
+        "disk.total", "disk.free", "disk.used", "disk.load",
+        "uptime.days", "uptime.hours", "uptime.minutes",
+        "fps",
+    ];
 
     /// <summary>
     /// Values that are computed rather than read. This is the extension point: there is no

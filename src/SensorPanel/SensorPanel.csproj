@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SensorPanel.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 2 MB. The gen0 budget otherwise scales with the CPU's L3 cache (~48 MB on a 96 MB L3), so the
          little garbage made per tick piles up for tens of minutes before the first collection. -->
     <RuntimeHostConfigurationOption Include="System.GC.Gen0MaxBudget" Value="2097152" />

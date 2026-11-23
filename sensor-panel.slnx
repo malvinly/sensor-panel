@@ -3,4 +3,7 @@
     <Project Path="src/SensorPanel.Screenshots/SensorPanel.Screenshots.csproj" />
     <Project Path="src/SensorPanel/SensorPanel.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SensorPanel.Tests/SensorPanel.Tests.csproj" />
+  </Folder>
 </Solution>

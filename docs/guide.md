@@ -75,6 +75,8 @@ During development, from an elevated terminal at the repository root: `dotnet ru
 
 `src/SensorPanel.Screenshots` renders configs with made-up sensor values and a fixed clock, through the app's own renderer, so it needs no panel, sensors or administrator rights. `dotnet run --project src/SensorPanel.Screenshots` regenerates the README screenshots in `docs/images`; `dotnet run --project src/SensorPanel.Screenshots -- path\to\config.json out.png` renders any config.
 
+`tests/SensorPanel.Tests` holds the unit tests: `dotnet test` from the repository root runs them, without a panel, sensors or administrator rights. They load and render every layout in `src/SensorPanel/Configs` and check that it reads only keys that exist, so run them after adding or editing a layout or a key. The tests also check the config rules, the wire protocol, which parts of a frame are sent, the fps arithmetic, and the configs folder written on first run.
+
 The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not matter if Windows renumbers it. If the panel is unplugged or the PC sleeps, the app keeps retrying and repaints when it comes back. Close any other program that drives the panel (such as turing-smart-screen-python) before starting this one.
 
 ## settings.json
@@ -287,6 +289,8 @@ Then use `"sensor": "gpu.mem.load"` in the config. Only the keys that widgets re
 ```csharp
 ["gpu.mem.load"] = ["gpu.mem.used", "gpu.mem.total"],
 ```
+
+Add the key to `ComputedKeys` as well, just above `AddDerived()`: the tests check every shipped layout's keys against it.
 
 ### Adding a widget type
 
