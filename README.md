@@ -13,7 +13,7 @@ A Windows system monitor for the small USB screen on my desk, a Turing Smart Scr
 
 This is written and tuned on one machine:
 
-| | |
+| Part | Model |
 |---|---|
 | Display | Turing Smart Screen 3.5" (hardware revision A) |
 | CPU | AMD Ryzen 7 9850X3D |
