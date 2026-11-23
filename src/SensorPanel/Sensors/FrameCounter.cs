@@ -44,8 +44,12 @@ internal sealed class FrameCounter : IDisposable
         IntPtr loggerName = Marshal.StringToHGlobalUni(SessionName);
         ulong session = 0;
 
+        // The session name is machine-wide. When it exists, it is either left over from a run that was
+        // killed, or in use by another SensorPanel (a --png run is allowed beside the tray instance).
+        // Only the first is stopped: stopping the second would silently end that instance's fps.
         int error = StartTraceW(out session, SessionName, Properties(properties));
-        if (error == 183 /* ERROR_ALREADY_EXISTS: left over from a run that was killed */)
+        bool inUse = error == 183 /* ERROR_ALREADY_EXISTS */ && AnotherInstanceRuns();
+        if (error == 183 && !inUse)
         {
             ControlTraceW(0, SessionName, Properties(properties), ControlStop);
             error = StartTraceW(out session, SessionName, Properties(properties));
@@ -58,7 +62,9 @@ internal sealed class FrameCounter : IDisposable
             var logfile = new LogFile
             {
                 LoggerName = loggerName,
-                ProcessTraceMode = 0x100 /* REAL_TIME */ | 0x10000000 /* EVENT_RECORD */,
+                // RAW_TIMESTAMP keeps event timestamps in QPC ticks (Wnode.ClientContext = 1), the clock
+                // Read compares them with; without it ProcessTrace converts them to FILETIME.
+                ProcessTraceMode = 0x100 /* REAL_TIME */ | 0x10000000 /* EVENT_RECORD */ | 0x1000 /* RAW_TIMESTAMP */,
                 EventRecordCallback = Marshal.GetFunctionPointerForDelegate(Callback),
             };
             trace = OpenTraceW(ref logfile);
@@ -70,7 +76,9 @@ internal sealed class FrameCounter : IDisposable
             if (session != 0) ControlTraceW(session, null, Properties(properties), ControlStop);
             Marshal.FreeHGlobal(properties);
             Marshal.FreeHGlobal(loggerName);
-            Log.Warn($"fps: cannot start the ETW session (Windows error {error}{(error == 5 ? ", needs administrator rights" : "")}), so it shows \"--\".");
+            Log.Warn(inUse
+                ? "fps: another SensorPanel is already counting frames, so it shows \"--\" here."
+                : $"fps: cannot start the ETW session (Windows error {error}{(error == 5 ? ", needs administrator rights" : "")}), so it shows \"--\".");
             return null;
         }
 
@@ -126,6 +134,14 @@ internal sealed class FrameCounter : IDisposable
         Marshal.FreeHGlobal(_loggerName);
     }
 
+    private static bool AnotherInstanceRuns()
+    {
+        using var self = Process.GetCurrentProcess();
+        var processes = Process.GetProcessesByName(self.ProcessName);
+        foreach (var process in processes) process.Dispose();
+        return processes.Length > 1;
+    }
+
     /// <summary>Enables only DxgKrnl's Present event: the provider's Present keyword alone is ~1,000 events a second at idle.</summary>
     private static int EnablePresentEvent(ulong session)
     {
@@ -159,7 +175,7 @@ internal sealed class FrameCounter : IDisposable
     {
         for (int i = 0; i < PropertiesSize; i++) Marshal.WriteByte(p, i, 0);
         Marshal.WriteInt32(p, 0, PropertiesSize);   // Wnode.BufferSize
-        Marshal.WriteInt32(p, 40, 1);               // Wnode.ClientContext: QPC timestamps, as Stopwatch
+        Marshal.WriteInt32(p, 40, 1);               // Wnode.ClientContext: QPC timestamps, as Stopwatch (kept by RAW_TIMESTAMP in Start)
         Marshal.WriteInt32(p, 44, 0x20000);         // Wnode.Flags: WNODE_FLAG_TRACED_GUID
         Marshal.WriteInt32(p, 48, 4);               // BufferSize, KB: one present event is ~80 bytes
         Marshal.WriteInt32(p, 52, 2);               // MinimumBuffers
