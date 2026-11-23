@@ -71,4 +71,4 @@ The wire protocol was learned by reading [turing-smart-screen-python](https://gi
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). The published exe also contains third-party components under their own licenses: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
