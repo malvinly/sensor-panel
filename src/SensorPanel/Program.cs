@@ -119,12 +119,12 @@ internal static class Program
     private const string ShippedPrefix = "configs/";
 
     /// <summary>The config to start with when none has been picked from the menu.</summary>
-    private const string DefaultConfigName = "default-sample.json";
+    private const string DefaultConfigName = "default.json";
 
     /// <summary>
     /// The config to start with when none was picked, and to fall back on when the one to start
-    /// with will not load: default-sample.json, or if that has been deleted, the first config in
-    /// the menu. When the folder has no configs left at all, default-sample.json is written back.
+    /// with will not load: default.json, or if that has been deleted, the first config in
+    /// the menu. When the folder has no configs left at all, default.json is written back.
     /// </summary>
     private static string DefaultConfig(string configs)
     {
@@ -146,8 +146,8 @@ internal static class Program
     }
 
     /// <summary>
-    /// Writes default-sample.json back from the exe, with media/background.png, the picture it
-    /// draws, if that is missing too. The other shipped configs are not restored.
+    /// Writes default.json back from the exe, with media/background.png, the picture it
+    /// draws, if that is missing too.
     /// </summary>
     private static void RestoreDefaultConfig(string configs)
     {
@@ -171,8 +171,8 @@ internal static class Program
     }
 
     /// <summary>
-    /// First run from a fresh copy of the exe: write the built-in layouts into the configs folder
-    /// so they can be edited. They are written to a staging folder that is renamed at the end,
+    /// First run from a fresh copy of the exe: write the built-in layout (default.json and its
+    /// background) into the configs folder so it can be edited. They are written to a staging folder that is renamed at the end,
     /// so the configs folder either does not exist or is complete.
     /// </summary>
     private static void WriteDefaultConfigs(string configs)

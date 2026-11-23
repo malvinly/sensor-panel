@@ -12,16 +12,16 @@ Right-click the icon for the menu:
 
 ## Which config runs
 
-On first start the exe creates the `configs` folder and writes the five shipped layouts and their pictures into it. Delete the folder to get the originals back.
+On first start the exe creates the `configs` folder and writes the one shipped layout, `default.json`, and its background picture into it. Delete the folder to get the original back. The other layouts are only in the repository: to use one, copy its `.json` from [src/SensorPanel/Configs](../src/SensorPanel/Configs) into the `configs` folder (for `slideshow.json`, also copy the `media/slides` folder of photos it shows).
 
 At each start the app runs, in order:
 
 1. the `--config` file, if one was given;
 2. the config last picked from the menu;
-3. `default-sample.json`;
+3. `default.json`;
 4. if that has been deleted, the first config in the menu.
 
-If the `configs` folder has no `.json` files left at all, `default-sample.json` (and `media/background.png`, which it draws, if that is missing too) is written back first. The other samples are not restored.
+If the `configs` folder has no `.json` files left at all, `default.json` (and `media/background.png`, which it draws, if that is missing too) is written back first.
 
 A config that fails to load is reported, whatever was running carries on, and the failed one is not remembered. If the config to start with will not load, the default (3 or 4 above) is tried instead; if that fails too (for example it has been broken by an edit), the panel shows nothing until you pick a config that loads.
 
@@ -71,7 +71,7 @@ The exe is a windowed program with no console of its own. Started from a termina
 - Redirecting to a file (`> sensors.txt`) works too.
 - Ctrl+C in that terminal stops the app the same way Exit does.
 
-During development, from an elevated terminal at the repository root: `dotnet run --project src/SensorPanel -c Release -- --config src/SensorPanel/Configs/default-sample.json`. `sensor-panel.slnx` opens the projects in Visual Studio.
+During development, from an elevated terminal at the repository root: `dotnet run --project src/SensorPanel -c Release -- --config src/SensorPanel/Configs/default.json`. `sensor-panel.slnx` opens the projects in Visual Studio.
 
 `src/SensorPanel.Screenshots` renders configs with made-up sensor values and a fixed clock, through the app's own renderer, so it needs no panel, sensors or administrator rights. `dotnet run --project src/SensorPanel.Screenshots` regenerates the README screenshots in `docs/images`; `dotnet run --project src/SensorPanel.Screenshots -- path\to\config.json out.png` renders any config.
 
@@ -223,7 +223,7 @@ Put a 480x320 image first in the list for a full-screen background.
 
 Slideshow notes:
 
-- A change costs the box's area x 2 bytes at 128,000 bytes per second, painted top to bottom: 1.2 s for the 320x240 frame in `slideshow-sample.json`, 2.4 s for the full screen. Nothing else on the panel updates during that time.
+- A change costs the box's area x 2 bytes at 128,000 bytes per second, painted top to bottom: 1.2 s for the 320x240 frame in `slideshow.json`, 2.4 s for the full screen. Nothing else on the panel updates during that time.
 - The folder is listed when the config is loaded. After adding pictures, pick the config again from the tray menu.
 - A missing folder, or one with no pictures, is a load error. A file that cannot be decoded is reported once and skipped.
 - Only the current picture is kept in memory, already scaled, so large photos are fine.

@@ -2,7 +2,7 @@
   // Turing Smart Screen dashboard. See docs/guide.md for the full schema.
   // Widgets are drawn in order, later ones on top. After editing, pick the config again
   // from the tray menu.
-  "name": "Default sample",
+  "name": "Default",
   "refreshMs": 1000,
   "orientation": "landscape",
   "brightness": 20,

@@ -3,7 +3,7 @@
   // The photo changes every 10 s. It is 320x240 = 153,600 bytes, so each change is a 1.2 s
   // top-to-bottom wipe inside the frame; a full-screen photo would take 2.4 s.
   // Put your own .png / .jpg files in the "media\slides" folder beside this file.
-  "name": "Slideshow sample",
+  "name": "Slideshow",
   "refreshMs": 1000,
   "orientation": "landscape",
   "brightness": 20,

@@ -28,7 +28,7 @@ if (root is null)
 }
 var configs = Path.Combine(root.FullName, "src", "SensorPanel", "Configs");
 var images = Path.Combine(root.FullName, "docs", "images");
-Render(Path.Combine(configs, "default-sample.json"), Path.Combine(images, "default-sample.png"));
+Render(Path.Combine(configs, "default.json"), Path.Combine(images, "default.png"));
 Render(Path.Combine(configs, "gaming.json"), Path.Combine(images, "gaming.png"), gaming: true);
 return 0;
 

@@ -38,16 +38,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The shipped layouts travel inside the exe and are written to a configs folder beside it on first run.
-         Program.WriteDefaultConfigs extracts every resource whose name starts with "configs/". -->
-    <EmbeddedResource Include="Configs\default-sample.json" LogicalName="configs/default-sample.json" />
+    <!-- Only the default layout travels inside the exe; it is written to a configs folder beside it on first run.
+         Program.WriteDefaultConfigs extracts every resource whose name starts with "configs/".
+         The other layouts in Configs stay in the repository, to be copied by hand. -->
+    <EmbeddedResource Include="Configs\default.json" LogicalName="configs/default.json" />
     <EmbeddedResource Include="Configs\media\background.png" LogicalName="configs/media/background.png" />
-    <EmbeddedResource Include="Configs\portrait-sample.json" LogicalName="configs/portrait-sample.json" />
-    <EmbeddedResource Include="Configs\slideshow-sample.json" LogicalName="configs/slideshow-sample.json" />
-    <EmbeddedResource Include="Configs\simple-rows.json" LogicalName="configs/simple-rows.json" />
-    <EmbeddedResource Include="Configs\simple-columns.json" LogicalName="configs/simple-columns.json" />
-    <EmbeddedResource Include="Configs\gaming.json" LogicalName="configs/gaming.json" />
-    <EmbeddedResource Include="Configs\media\slides\*.png" LogicalName="configs/media/slides/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
