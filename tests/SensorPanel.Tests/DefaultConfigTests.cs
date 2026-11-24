@@ -32,7 +32,7 @@ public sealed class DefaultConfigTests : IDisposable
         string mine = _dir.Write("configs/mine/mine.json", "{}");
         Program.WriteDefaultConfigs(Configs);
 
-        Assert.Equal([Path.GetDirectoryName(mine)], Directory.GetFileSystemEntries(Configs));
+        Assert.Equal([Path.GetDirectoryName(mine)!], Directory.GetFileSystemEntries(Configs));
         Assert.False(Directory.Exists(Configs + ".new"), "nothing is even staged");
     }
 
