@@ -20,6 +20,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     private Thread? _thread;
     private string? _requested, _fallback;
     private bool _lhmGpu;
+    private WeatherSettings? _weather;
     private readonly ManualResetEventSlim _dark = new(false);   // set once the panel has been blanked for sleep
     private volatile bool _stop, _suspended, _displaysOff;
 
@@ -41,11 +42,13 @@ public sealed class Worker(IPresenter presenter, bool verbose)
 
     /// <param name="fallbackPath">Loaded instead if <paramref name="configPath"/> cannot be.</param>
     /// <param name="lhmGpu">"lhmGpu" from settings.json, for the SensorHub.</param>
-    public void Start(string configPath, string fallbackPath, bool lhmGpu)
+    /// <param name="weather">"weather" from settings.json, for the SensorHub.</param>
+    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather)
     {
         _requested = configPath;
         _fallback = fallbackPath;
         _lhmGpu = lhmGpu;
+        _weather = weather;
         _thread = new Thread(Run) { Name = "Panel", IsBackground = true };
         _thread.Start();
     }
@@ -190,7 +193,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
             config = Config.Load(path);
             renderer = new Renderer(config, Path.GetDirectoryName(Path.GetFullPath(path))!);
             var keys = config.Widgets.SelectMany(w => w.SensorKeys());
-            if (_sensors is null) _sensors = new SensorHub(config.RefreshMs, config.SensorIntervals, keys, _lhmGpu);
+            if (_sensors is null) _sensors = new SensorHub(config.RefreshMs, config.SensorIntervals, keys, _lhmGpu, _weather);
             else _sensors.Configure(config.RefreshMs, config.SensorIntervals, keys);
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or InvalidDataException)

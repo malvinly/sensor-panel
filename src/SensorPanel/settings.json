@@ -4,6 +4,16 @@
   // true: read the GPU through LibreHardwareMonitor instead of NVIDIA's NVML.
   "lhmGpu": false,
 
+  // Where the weather on the default layout is for, in decimal degrees (south and west are
+  // negative). Until both are set, the weather shows "--". While a layout shows the weather,
+  // they are sent to Open-Meteo (open-meteo.com), rounded to two decimals, about every 15 minutes.
+  "weather": {
+    "latitude": null,
+    "longitude": null,
+    // true: temperatures in °F instead of °C.
+    "fahrenheit": false
+  },
+
   // Show another layout while a game runs, and go back to yours after it ends.
   // Off while "games" is empty, or holds only "!" entries.
   "gaming": {

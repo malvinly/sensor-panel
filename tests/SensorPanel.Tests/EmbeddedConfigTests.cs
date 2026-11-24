@@ -50,6 +50,9 @@ public class EmbeddedConfigTests
         Assert.Empty(settings.Gaming.Games!);
         var defaults = new Program.GamingSettings();     // what a "gaming" without the two timings gets
         Assert.Equal((defaults.ScanMs, defaults.EndAfterMs), (settings.Gaming.ScanMs, settings.Gaming.EndAfterMs));
+        Assert.Null(settings.Weather!.Latitude);      // no location until the user gives one: nothing is sent anywhere
+        Assert.Null(settings.Weather.Longitude);
+        Assert.False(settings.Weather.Fahrenheit);
         Assert.False(File.Exists(path + ".new"));
     }
 

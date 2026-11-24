@@ -16,6 +16,7 @@ namespace SensorPanel.Sensors;
 /// "fps" comes from <see cref="FrameCounter"/>, a source that costs something only while it runs,
 /// so <see cref="Configure"/> starts it only while a widget shows the key and stops it otherwise.
 /// A key like that is a third way to add one: a field, a few lines in Configure and Update, a line in Dump, and one in ComputedKeys.
+/// disk.read and disk.write (<see cref="DiskActivity"/>) and the weather.* keys (<see cref="Weather"/>) are added that way too.
 /// </summary>
 public sealed class SensorHub : IDisposable
 {
@@ -33,7 +34,7 @@ public sealed class SensorHub : IDisposable
     private static readonly HardwareType[] Mem = [HardwareType.Memory];
     private static readonly HardwareType[] Net = [HardwareType.Network];
     private static readonly HardwareType[] Board = [HardwareType.SuperIO];
-    private const double BytesToMB = 1.0 / (1024 * 1024);
+    internal const double BytesToMB = 1.0 / (1024 * 1024);
 
     // When a key is listed more than once, the first sensor that exists wins.
     // Keys that share a first segment ("gpu.*") should all come from one device: sensorIntervals is
@@ -83,10 +84,16 @@ public sealed class SensorHub : IDisposable
     private List<string> _nvmlKeys = [];        // the gpu.* keys in use
     private int _nvmlEvery = 1;
     private long _tick;
-    private bool _disk;                         // a disk.* key is in use
+    private bool _disk;                         // a disk space key (disk.total, .free, .used, .load) is in use
     private long _diskDue;                      // Environment.TickCount64 at which disk space is read again; 0 = next tick
     // Running only while a widget shows "fps". Null also when it would not start: each config switch tries again.
     private FrameCounter? _frames;
+    // Open only while a widget shows one of their keys; null also when they could not be opened.
+    private DiskActivity? _diskActivity;
+    private Weather? _weather;
+    private readonly WeatherSettings? _weatherSettings;
+
+    private static readonly string[] DiskSpaceKeys = ["disk.total", "disk.free", "disk.used", "disk.load"];
 
     /// <summary>The first segment of each hardware key ("cpu", "gpu", ...): what sensorIntervals can name.</summary>
     public static IEnumerable<string> Groups => Maps.Select(m => Group(m.Key)).Distinct();
@@ -100,8 +107,10 @@ public sealed class SensorHub : IDisposable
     /// <param name="intervals">Slower poll intervals in ms by key group, e.g. "gpu" -> 3000.</param>
     /// <param name="keys">The keys the widgets read; only these are bound, and only their devices polled.</param>
     /// <param name="lhmGpu">Read the GPU through LHM even when NVML is there ("lhmGpu" in settings.json).</param>
-    public SensorHub(int refreshMs, IReadOnlyDictionary<string, int> intervals, IEnumerable<string> keys, bool lhmGpu)
+    /// <param name="weather">Where the weather.* keys are for ("weather" in settings.json).</param>
+    public SensorHub(int refreshMs, IReadOnlyDictionary<string, int> intervals, IEnumerable<string> keys, bool lhmGpu, WeatherSettings? weather = null)
     {
+        _weatherSettings = weather;
         _nvml = lhmGpu ? null : Nvml.Open();
         _computer.IsGpuEnabled = _nvml is null;     // once LHM polls the GPU at all, it pays the whole 77 ms
         _computer.Open();
@@ -166,10 +175,17 @@ public sealed class SensorHub : IDisposable
 
         Snapshot.Clear();   // a key the new config no longer reads would otherwise keep its last value
         (_bound, _polled, _nvmlKeys, _nvmlEvery, _tick) = (bound, polled, nvmlKeys, nvmlEvery, 0);     // tick 0 polls every device
-        (_disk, _diskDue) = (used.Any(k => Group(k) == "disk"), 0);     // and the disk, since its keys were just cleared
+        (_disk, _diskDue) = (used.Overlaps(DiskSpaceKeys), 0);     // and the disk, since its keys were just cleared
 
         if (_frames is { Ended: true } || !used.Contains("fps")) { _frames?.Dispose(); _frames = null; }
         if (used.Contains("fps")) _frames ??= FrameCounter.Start();
+
+        // Kept across a switch to another layout that shows their keys, like the frame counter: the
+        // weather's reading and schedule carry over, and each writes its keys back on the next tick.
+        if (used.Contains(DiskActivity.ReadKey) || used.Contains(DiskActivity.WriteKey)) _diskActivity ??= DiskActivity.Open();
+        else { _diskActivity?.Dispose(); _diskActivity = null; }
+        if (used.Overlaps(Weather.Keys)) _weather ??= Weather.Open(_weatherSettings);
+        else { _weather?.Dispose(); _weather = null; }
     }
 
     /// <summary>The keys widgets show, plus the keys a computed one among them is computed from.</summary>
@@ -203,6 +219,8 @@ public sealed class SensorHub : IDisposable
         if (_tick % _nvmlEvery == 0) _nvml?.Read(_nvmlKeys, Snapshot);
         if (_frames?.Read() is double fps) Snapshot["fps"] = fps;
         else Snapshot.Remove("fps");
+        _diskActivity?.Read(Snapshot);
+        _weather?.Read(Snapshot);
         _tick++;
         AddDerived();
     }
@@ -214,6 +232,7 @@ public sealed class SensorHub : IDisposable
     private static readonly Dictionary<string, string[]> DerivedFrom = new()
     {
         ["mem.total"] = ["mem.used", "mem.free"],
+        ["power.total"] = ["cpu.power", "gpu.power"],
     };
 
     /// <summary>
@@ -224,9 +243,12 @@ public sealed class SensorHub : IDisposable
     internal static readonly string[] ComputedKeys =
     [
         "mem.total",
-        "disk.total", "disk.free", "disk.used", "disk.load",
+        "power.total",
+        .. DiskSpaceKeys,
+        DiskActivity.ReadKey, DiskActivity.WriteKey,
         "uptime.days", "uptime.hours", "uptime.minutes",
         "fps",
+        .. Weather.Keys,
     ];
 
     /// <summary>
@@ -237,6 +259,13 @@ public sealed class SensorHub : IDisposable
     {
         if (Snapshot.TryGetValue("mem.used", out var used) && Snapshot.TryGetValue("mem.free", out var free))
             Snapshot["mem.total"] = used + free;
+
+        // The CPU package and the graphics card: most of what the PC draws, but not all of it, and
+        // not what the wall socket sees. Like any key, it is absent ("--") when either is missing,
+        // rather than a total that quietly leaves one out.
+        if (Snapshot.TryGetValue("cpu.power", out var cpuPower) && Snapshot.TryGetValue("gpu.power", out var gpuPower))
+            Snapshot["power.total"] = cpuPower + gpuPower;
+        else Snapshot.Remove("power.total");
 
         // Each read of drive space is a GetDiskFreeSpaceEx call, for numbers that move over
         // minutes; between reads the keys keep their values in the snapshot.
@@ -284,12 +313,19 @@ public sealed class SensorHub : IDisposable
         }
 
         _disk = true;   // the listing binds HardwareKeys, which has no disk.* key; list it like the other computed keys
+        _diskActivity ??= DiskActivity.Open();
+        if (_diskActivity is not null)
+        {
+            _diskActivity.Read(Snapshot);   // the rates need two reads, a moment apart
+            Thread.Sleep(250);
+        }
         Update();
         output.WriteLine($"\nKeys available to widgets (gpu.* from {(_nvml is null ? "LibreHardwareMonitor" : "NVML")}):");
         foreach (var (key, value) in Snapshot.OrderBy(p => p.Key))
             output.WriteLine($"    {key,-16} {value:0.###}");
         // Not started here: it counts the foreground window, which is this terminal, and needs a second tick.
         output.WriteLine($"    {"fps",-16} (frames per second of the foreground app, counted while a widget shows it)");
+        output.WriteLine($"    {"weather.*",-16} ({string.Join(", ", Weather.Keys)}: from Open-Meteo, fetched while a widget shows one; see settings.json)");
     }
 
     public void Dispose()
@@ -297,6 +333,8 @@ public sealed class SensorHub : IDisposable
         _computer.Close();
         _nvml?.Dispose();
         _frames?.Dispose();
+        _diskActivity?.Dispose();
+        _weather?.Dispose();
     }
 }
 

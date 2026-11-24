@@ -27,6 +27,8 @@ Not done: talking to the panel over raw USB (WinUSB). It means replacing Windows
 - **Only what is on screen is polled.** The motherboard's fan chip, for example, is left alone unless the layout shows a fan.
 - **LibreHardwareMonitor's sensor history is off.** By default it keeps a day of readings for every sensor, which nothing here uses and which grows all day.
 - **Disk space is read every 30 s**, not every tick: it changes slowly.
+- **Disk activity comes straight from Windows.** `disk.read` and `disk.write` are one `IOCTL_DISK_PERFORMANCE` call on drive C: per tick, about 8 µs, with no memory and no elevation. LibreHardwareMonitor's storage support would open every drive, read their SMART data, need administrator rights, and took 134 ms just to open.
+- **The weather has no timer.** The panel's own tick starts a fetch when one is due, so nothing runs while the monitors are off, and nothing at all while the layout shows no weather. A fetch is about 600 bytes, every 15 minutes.
 
 ## Memory
 

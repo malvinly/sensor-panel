@@ -83,11 +83,12 @@ The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not ma
 
 ## settings.json
 
-A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has two settings:
+A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has three settings:
 
 ```json
 {
   "lhmGpu": false,
+  "weather": { "latitude": 51.51, "longitude": -0.13, "fahrenheit": false },
   "gaming": {
     "config": "gaming/gaming.json",
     "games": [
@@ -110,7 +111,18 @@ Use `lhmGpu` when:
 - you want fan RPM on a driver too old for NVML's fan call (`gpu.fan` has no value there);
 - an NVML reading looks wrong on your card.
 
-It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use.
+It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use. The default layout polls the GPU too, though it shows no GPU card: `power.total` needs `gpu.power`.
+
+### `weather`
+
+Where the `weather.*` keys are for, which the default layout shows. `latitude` and `longitude` are decimal degrees, negative for south and west; two decimals are plenty. Until both are set, the weather shows `--` and nothing is sent anywhere. `fahrenheit` (default `false`) gives temperatures in °F instead of °C. A latitude outside -90 to 90, or a longitude outside -180 to 180, is reported.
+
+The weather comes from [Open-Meteo](https://open-meteo.com), which needs no account or key and is free for non-commercial use. Each request sends `api.open-meteo.com` your coordinates, rounded to two decimals (about a kilometre), and, as any web request does, your public IP address. Requests are made only while a layout shows a weather key and the panel is lit, so their timing also shows when this PC is on and awake. Nothing else about you or this PC is sent.
+
+- Open-Meteo's current conditions change in 15-minute steps, so the app asks 2 minutes after each quarter hour. If the reply still holds the step already shown, it asks once more 5 minutes later.
+- After a failed request it tries again 30 s later (after a wake the network is often still connecting), then every 5 minutes. The last reading stays on the panel until it is an hour old, then the weather shows `--`.
+- Switching between layouts keeps the reading and the schedule, as long as the new layout shows the weather too. Switching to one that does not (such as the gaming layout) stops the requests, and coming back asks again at once.
+- Each request costs a few tens of milliseconds of CPU. While a weather layout runs, .NET's networking adds 2-3 MB of memory, which stays after switching away until the app exits.
 
 ### `gaming`
 
@@ -156,7 +168,7 @@ By default every device the config's widgets read from is polled every `refreshM
 - The groups are `cpu`, `gpu`, `mem`, `net` and `fan`. `"gpu"` covers every `gpu.*` key. A single key (`"gpu.temp"`) cannot be listed, because hardware is polled a whole device at a time.
 - An interval can only slow a device down. Anything shorter than `refreshMs` is treated as `refreshMs`, and other values are rounded up to a whole number of refreshes: `2500` at a 1000 ms refresh means every 3000 ms. The app logs the interval it ended up with.
 - Between polls a key keeps its last value. Graphs still add a point every refresh, so a graph of a slowed sensor shows flat steps.
-- `disk.*` and `uptime.*` are computed, not read from hardware, so they cannot be listed: `uptime.*` is refreshed every `refreshMs`, and `disk.*` every 30 s because free space moves slowly. `mem.total` is computed from `mem.used` and `mem.free`, so it follows `"mem"`.
+- `disk.*`, `uptime.*`, `power.total` and `weather.*` are computed or fetched, not read from hardware, so they cannot be listed: `uptime.*`, `disk.read` and `disk.write` are refreshed every `refreshMs`, the disk space keys every 30 s because free space moves slowly, and `weather.*` as described under [`weather`](#weather). `power.total` follows `"cpu"` and `"gpu"`, the two it is the sum of. `mem.total` is computed from `mem.used` and `mem.free`, so it follows `"mem"`.
 
 With the GPU read through NVML, no device on my machine is expensive enough to need this. With `"lhmGpu": true` the GPU is: polling it every 3 s instead of every 1 s cuts the app's CPU use by a third to a half. `SensorPanel sensors` shows the poll time of each device LibreHardwareMonitor reads.
 
@@ -178,7 +190,7 @@ When a sensor key has no value (the sensor was not found, or needs administrator
 | `border` | none | `{ "color": "#1E2636", "width": 1 }`. Inside it, `color` defaults to grey and `width` to `1`. |
 | `accent` | none | Stripe along one edge, clipped to the rounded corners: `{ "edge": "left", "color": "#00E5FF", "width": 4 }`. `edge` is `left`, `top`, `right` or `bottom`. Inside it, the defaults are `left`, white and `4`. |
 
-### `text`: label, readout or clock
+### `text`: label, readout, clock or weather
 
 `x`,`y` is the **top of the capital letters**, at the left, centre or right of the text according to `align`. Give one source:
 
@@ -188,8 +200,9 @@ When a sensor key has no value (the sensor was not found, or needs administrator
 | `sensor` + `format` | One key through a [.NET format string](https://learn.microsoft.com/dotnet/standard/base-types/standard-numeric-format-strings), e.g. `"{0:F0}%"`. Default `"{0:F0}"`. |
 | `sensors` + `format` | Several keys in one string: `"sensors": ["mem.used", "mem.total"], "format": "{0:F1} / {1:F0} GB"`. |
 | `clock` | Current time through a [.NET date format](https://learn.microsoft.com/dotnet/standard/base-types/custom-date-and-time-format-strings): `"HH:mm"`, `"ddd dd MMM yyyy"`. |
+| `weather` | The current weather (see [`weather`](#weather)): `"icon"`, a symbol to draw with `"font": "Segoe UI Symbol"` (sun, moon, sun and cloud, cloud, umbrella for rain, snowflake, thunderstorm), or `"condition"`, a short name such as `Partly cloudy`. `--` without a reading. |
 
-Extra sources are not reported: `clock` wins over `sensors`, `sensors` over `sensor`, and any of them over `value`. Numbers and dates are always formatted the English way (`.` decimal point, English day and month names), whatever the Windows language.
+Extra sources are not reported: `clock` wins over `weather`, `weather` over `sensors`, `sensors` over `sensor`, and any of them over `value`. Numbers and dates are always formatted the English way (`.` decimal point, English day and month names), whatever the Windows language.
 
 | Property | Default | |
 |---|---|---|
@@ -238,6 +251,7 @@ Extra sources are not reported: `clock` wins over `sensors`, `sensors` over `sen
 | `color` | white | |
 | `thickness` | `1.5` | |
 | `fill` | `false` | Tint the area under the curve. |
+| `flip` | `false` | Upside down: `min` at the top edge, and `fill` tints above the curve. Put one under a normal graph of the same width, with a 1 px line between them, for a mirrored pair: the default layout shows download above the line and upload below it. |
 
 ### `image`: picture or slideshow
 
@@ -277,9 +291,13 @@ Run `SensorPanel sensors` for the live list on your machine. Built in:
 | `gpu.temp` | °C (whole degrees from NVML) | | `uptime.days`, `uptime.hours`, `uptime.minutes` | |
 | `gpu.power` | W | | `gpu.mem.used`, `gpu.mem.total` | GB |
 | `gpu.fan` | RPM | | `fan.cpu` *, `fan.sys1` *, `fan.sys2` * | RPM (motherboard headers) |
-| `fps` † | frames/s | | | |
+| `fps` † | frames/s | | `disk.read`, `disk.write` | MB/s (drive C:) |
+| `power.total` * | W: `cpu.power` + `gpu.power`; `--` unless both read | | `weather.temp` ‡, `weather.high` ‡, `weather.low` ‡ | °C or °F (now; today's high and low) |
+| `weather.precip` ‡ | % (today's chance of precipitation) | | `weather.code` ‡, `weather.day` ‡ | WMO weather code; 1 by day, 0 at night |
 
 \* needs administrator + PawnIO.
+
+‡ From Open-Meteo, for the location in settings.json; see [`weather`](#weather). Text widgets show the conditions with `"weather": "icon"` or `"condition"` rather than reading `weather.code` themselves.
 
 † Frames per second of the app in the foreground, from Windows' own record of every frame shown (an ETW trace of the graphics kernel), for DirectX, Vulkan and OpenGL alike. It reads "--" for apps that do not present frames that way (browsers, Electron apps, UWP apps) and for the second or two after switching windows. Counting runs only while a layout shows `fps`, and costs about 1 MB of memory.
 

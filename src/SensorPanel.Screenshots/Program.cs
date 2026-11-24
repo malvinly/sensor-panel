@@ -42,8 +42,9 @@ static void Render(string configPath, string outPath, bool gaming = false)
     // overlaying it leaves the other values, and the other screenshots, as they were.
     var rng = new Random(7);
     var game = new GameState(new Random(11));
+    var disk = new Random(13);  // its own, so adding the disk values left the other walks as they were
     var s = new Dictionary<string, double>();
-    double cpu = 18, gpu = 35, net = 8;
+    double cpu = 18, gpu = 35, net = 8, read = 20, write = 6;
 
     // Enough ticks to fill the longest graph's history.
     for (int tick = 0; tick < 100; tick++)
@@ -52,6 +53,10 @@ static void Render(string configPath, string outPath, bool gaming = false)
         cpu = Math.Clamp(cpu + rng.NextDouble() * 8 - 4, 6, 45);
         gpu = Math.Clamp(gpu + rng.NextDouble() * 10 - 5 + (tick is > 40 and < 70 ? 3 : -1), 8, 92);
         net = Math.Clamp(net + rng.NextDouble() * 6 - 3, 0.5, 26);
+        // Disk activity: a trickle, with a burst of reading and writing near the end.
+        bool burst = tick is > 70 and < 82;
+        read = Math.Clamp(read + disk.NextDouble() * 40 - 20 + (burst ? 30 : -4), 0, 190);
+        write = Math.Clamp(write + disk.NextDouble() * 16 - 8 + (burst ? 6 : -1.5), 0, 80);
 
         s["cpu.load"] = cpu;
         s["cpu.temp"] = 48 + cpu * 0.4;
@@ -71,12 +76,25 @@ static void Render(string configPath, string outPath, bool gaming = false)
         s["disk.free"] = 1204;
         s["disk.total"] = 1862;
         s["disk.load"] = 35;
+        s["disk.read"] = read;
+        s["disk.write"] = write;
         s["net.down"] = net;
-        s["net.up"] = net / 7;
+        s["net.up"] = net / 4;
+        s["power.total"] = s["cpu.power"] + s["gpu.power"];
+        s["weather.temp"] = 12;
+        s["weather.high"] = 15;
+        s["weather.low"] = 7;
+        s["weather.precip"] = 20;
+        s["weather.code"] = 2;      // partly cloudy
+        s["weather.day"] = 1;
         s["uptime.days"] = 2;
         s["uptime.hours"] = 7;
         s["uptime.minutes"] = 41;
-        if (gaming) Game(game, tick, s);
+        if (gaming)
+        {
+            Game(game, tick, s);
+            s["power.total"] = s["cpu.power"] + s["gpu.power"];     // again: the game replaced both
+        }
 
         renderer.Render(s);
     }

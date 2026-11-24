@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using SkiaSharp;
+using WeatherSource = SensorPanel.Sensors.Weather;
 
 namespace SensorPanel.Layout;
 
@@ -78,8 +79,9 @@ public sealed class PanelWidget : Widget
 }
 
 /// <summary>
-/// A line of text: a literal ("value"), one or more sensors through a format string, or the
-/// clock. (x, y) is the top of the capital letters; x is the left, centre or right per "align".
+/// A line of text: a literal ("value"), one or more sensors through a format string, the clock,
+/// or the weather's conditions. (x, y) is the top of the capital letters; x is the left, centre
+/// or right per "align".
 /// </summary>
 public sealed class TextWidget : Widget
 {
@@ -91,6 +93,8 @@ public sealed class TextWidget : Widget
     public string Format { get; set; } = "{0:F0}";
     /// <summary>.NET date/time format for the current local time, e.g. "HH:mm" or "ddd dd MMM yyyy".</summary>
     public string? Clock { get; set; }
+    /// <summary>The current weather as a Segoe UI Symbol glyph ("icon") or a short name ("condition").</summary>
+    public WeatherText? Weather { get; set; }
     public bool Upper { get; set; }
 
     /// <summary>The time a clock shows. The Screenshots tool fixes it so its pictures do not change from run to run.</summary>
@@ -112,7 +116,7 @@ public sealed class TextWidget : Widget
             try { DateTime.Now.ToString(Clock, CultureInfo.InvariantCulture); }
             catch (FormatException) { throw new JsonException($"text: \"{Clock}\" is not a valid clock format."); }
         }
-        else if ((Sensors ?? (Sensor is null ? null : [Sensor])) is { } keys) CheckFormat("text", Format, keys.Length);
+        else if (Weather is null && (Sensors ?? (Sensor is null ? null : [Sensor])) is { } keys) CheckFormat("text", Format, keys.Length);
     }
 
     /// <summary>A format that asks for more values than it is given would otherwise fail only once the sensor first reads.</summary>
@@ -125,6 +129,7 @@ public sealed class TextWidget : Widget
     public override object? Sample(IReadOnlyDictionary<string, double> sensors)
     {
         _text = Clock is not null ? Now().ToString(Clock, CultureInfo.InvariantCulture)
+            : Weather is { } weather ? WeatherLabel(weather, sensors)
             : (Sensors ?? (Sensor is null ? null : [Sensor])) is { } keys ? FormatSensors(Format, keys, sensors)
             : Value ?? "";
         if (Upper) _text = _text.ToUpperInvariant();
@@ -138,6 +143,13 @@ public sealed class TextWidget : Widget
     }
 
     public override void Dispose() => _label?.Dispose();
+
+    private static string WeatherLabel(WeatherText weather, IReadOnlyDictionary<string, double> sensors)
+    {
+        double? code = sensors.TryGetValue(WeatherSource.Code, out var c) ? c : null;
+        double? day = sensors.TryGetValue(WeatherSource.Day, out var d) ? d : null;
+        return weather == WeatherText.Icon ? WeatherSource.Icon(code, day) : WeatherSource.Condition(code);
+    }
 
     /// <summary>"--" when any key is missing (e.g. temperatures when not elevated).</summary>
     internal static string FormatSensors(string format, string[] keys, IReadOnlyDictionary<string, double> sensors)
@@ -299,7 +311,11 @@ public sealed class GaugeWidget : Widget
     }
 }
 
-/// <summary>Sparkline of the last "history" samples, newest at the right edge.</summary>
+/// <summary>
+/// Sparkline of the last "history" samples, newest at the right edge. With "flip" it hangs from
+/// the top edge instead: placed under a normal graph, it makes a mirrored pair, such as download
+/// above a line and upload below it.
+/// </summary>
 public sealed class GraphWidget : Widget
 {
     public required string Sensor { get; set; }
@@ -312,6 +328,8 @@ public sealed class GraphWidget : Widget
     public float Thickness { get; set; } = 1.5f;
     /// <summary>Shade the area under the curve with a translucent tint of "color".</summary>
     public bool Fill { get; set; }
+    /// <summary>Upside down: "min" at the top edge, "max" at the bottom, and "fill" shades above the curve.</summary>
+    public bool Flip { get; set; }
 
     private float[] _ring = [];
     private int _count, _next, _ticks;
@@ -343,15 +361,16 @@ public sealed class GraphWidget : Widget
 
         float step = W / (History - 1);
         float inset = Thickness / 2;    // keep the stroke inside the box at 0% and 100%
-        // Curve points, then the two bottom corners that close the filled area.
+        // Curve points, then the two corners of the base edge (the bottom, or the top when flipped) that close the filled area.
+        float baseY = Flip ? Y : Y + H, rise = Flip ? 1 : -1;
         var points = _points ??= new SKPoint[History + 2];
         for (int i = 0; i < _count; i++)
         {
             float sample = _ring[(_next - _count + i + History) % History];
-            points[i] = new SKPoint(X + W - (_count - 1 - i) * step, Y + H - inset - sample * (H - Thickness));
+            points[i] = new SKPoint(X + W - (_count - 1 - i) * step, baseY + rise * (inset + sample * (H - Thickness)));
         }
-        points[_count] = new SKPoint(X + W, Y + H);
-        points[_count + 1] = new SKPoint(points[0].X, Y + H);
+        points[_count] = new SKPoint(X + W, baseY);
+        points[_count + 1] = new SKPoint(points[0].X, baseY);
 
         var builder = _builder ??= new SKPathBuilder();
         if (Fill)

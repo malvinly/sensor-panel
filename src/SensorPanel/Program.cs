@@ -77,7 +77,7 @@ internal static class Program
         // --config wins for this run; otherwise the last config picked from the menu, or the default.
         string fallback = DefaultConfig(configs);
         string? last = File.Exists(lastConfigFile) ? Path.Combine(configs, File.ReadAllText(lastConfigFile).Trim()) : null;
-        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu);
+        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather);
 
         // Ctrl+C blanks the panel on the way out, through the same Exit as the menu item and as
         // Windows shutting down or signing out (which the tray hears itself). Being killed (Task
@@ -105,6 +105,8 @@ internal static class Program
         /// <summary>The GPU entirely through LibreHardwareMonitor, not NVML.</summary>
         public bool LhmGpu { get; set; }
         public GamingSettings? Gaming { get; set; }
+        /// <summary>Where the weather.* keys are for. Sent to Open-Meteo, rounded, while a layout shows the weather.</summary>
+        public WeatherSettings? Weather { get; set; }
     }
 
     /// <summary>"gaming": the layout to show while a game runs (see <see cref="Tray.WatchGames"/>).</summary>

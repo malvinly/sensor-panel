@@ -33,6 +33,12 @@ public class SensorHubTests
     }
 
     [Fact]
+    public void Total_power_brings_the_cpu_and_gpu_power()
+    {
+        Assert.True(SensorHub.KeysToRead(["power.total"]).SetEquals(["power.total", "cpu.power", "gpu.power"]));
+    }
+
+    [Fact]
     public void Other_keys_are_read_as_they_are_once_each()
     {
         Assert.True(SensorHub.KeysToRead(["cpu.load", "cpu.load", "fps", "nope"]).SetEquals(["cpu.load", "fps", "nope"]));

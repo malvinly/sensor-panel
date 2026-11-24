@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using SkiaSharp;
+using WeatherSource = SensorPanel.Sensors.Weather;
 
 namespace SensorPanel.Layout;
 
@@ -32,6 +33,9 @@ public abstract class Widget : IDisposable
     /// </summary>
     public IEnumerable<string> SensorKeys() => this switch
     {
+        // A text's sources win in this order, here, in TextWidget.Sample and in TextWidget.Validate alike.
+        TextWidget { Clock: not null } => [],
+        TextWidget { Weather: not null } => WeatherSource.TextKeys,
         TextWidget t => t.Sensors ?? (t.Sensor is null ? [] : [t.Sensor]),
         BarWidget b => [b.Sensor],
         GaugeWidget g => [g.Sensor],
@@ -69,6 +73,7 @@ public abstract class Widget : IDisposable
 
 public enum Align { Left, Center, Right }
 public enum Edge { Left, Top, Right, Bottom }
+public enum WeatherText { Icon, Condition }
 
 internal static class Fonts
 {

@@ -139,6 +139,24 @@ public class WidgetSampleTests
         Assert.Equal(["a"], new GraphWidget { Sensor = "a" }.SensorKeys());
         Assert.Empty(new PanelWidget().SensorKeys());
         Assert.Empty(new ImageWidget { Path = "a.png" }.SensorKeys());
+        Assert.Equal(["weather.code", "weather.day"], new TextWidget { Weather = WeatherText.Icon, Sensor = "ignored" }.SensorKeys());
+        Assert.Empty(new TextWidget { Clock = "HH:mm", Weather = WeatherText.Icon, Sensor = "ignored" }.SensorKeys());   // the clock wins
+    }
+
+    [Fact]
+    public void Weather_text_names_the_conditions_or_shows_their_icon()
+    {
+        var partlyCloudy = Sensors(("weather.code", 2), ("weather.day", 1));
+        Assert.Equal("Partly cloudy", new TextWidget { Weather = WeatherText.Condition }.Sample(partlyCloudy));
+        Assert.Equal("PARTLY CLOUDY", new TextWidget { Weather = WeatherText.Condition, Upper = true }.Sample(partlyCloudy));
+        Assert.Equal("⛅", new TextWidget { Weather = WeatherText.Icon }.Sample(partlyCloudy));
+    }
+
+    [Fact]
+    public void Weather_text_shows_dashes_without_a_reading()
+    {
+        Assert.Equal("--", new TextWidget { Weather = WeatherText.Icon }.Sample(Sensors()));
+        Assert.Equal("--", new TextWidget { Weather = WeatherText.Condition }.Sample(Sensors()));
     }
 }
 
