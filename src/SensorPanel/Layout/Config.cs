@@ -13,7 +13,7 @@ public sealed class Config
     public string? Name { get; set; }
     public int RefreshMs { get; set; } = 1000;
     public Orientation Orientation { get; set; } = Orientation.Landscape;
-    public int Brightness { get; set; } = 20;
+    public int Brightness { get; set; } = 30;
     public SKColor Background { get; set; } = SKColors.Black;
     /// <summary>
     /// Slower poll intervals in ms for expensive hardware, by sensor key group (the part of a

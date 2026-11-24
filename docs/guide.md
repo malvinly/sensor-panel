@@ -151,7 +151,7 @@ Switching configs re-applies everything in the file. If the orientation changes 
 | `name` | file name | Shown in the tray menu and tooltip. |
 | `refreshMs` | `1000` | Sensor poll and redraw interval. At least 100. |
 | `orientation` | `"landscape"` | `landscape` (480x320), `portrait` (320x480), `reverseLandscape`, `reversePortrait`. |
-| `brightness` | `20` | 0-100. |
+| `brightness` | `30` | 0-100. |
 | `background` | `"#000000"` | Colour behind all widgets. |
 | `sensorIntervals` | `{}` | Poll expensive hardware less often. See below. |
 | `pauseWhenDisplayOff` | `true` | Turn the panel off, and stop polling, while Windows has the monitors off. |

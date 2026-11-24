@@ -36,7 +36,7 @@ public sealed class ConfigLoadTests : IDisposable
         Assert.Null(config.Name);
         Assert.Equal(1000, config.RefreshMs);
         Assert.Equal(Orientation.Landscape, config.Orientation);
-        Assert.Equal(20, config.Brightness);
+        Assert.Equal(30, config.Brightness);
         Assert.Equal(SKColors.Black, config.Background);
         Assert.True(config.PauseWhenDisplayOff);
         Assert.Empty(config.Widgets);

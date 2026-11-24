@@ -7,7 +7,7 @@
   "name": "Gaming",
   "refreshMs": 1000,
   "orientation": "landscape",
-  "brightness": 20,
+  "brightness": 30,
   "background": "#05070A",
   "widgets": [
     // ── FPS ─────────────────────────────────────────────────────────────────
