@@ -104,6 +104,12 @@ internal sealed class Tray : IDisposable
         }
 
         _menu.Items.Add(new Forms.ToolStripSeparator());
+        // Asked each time, so a task deleted in Task Scheduler shows unticked.
+        string exe = Environment.ProcessPath!;
+        bool on = LogonTask.IsOn(exe);
+        var logon = new Forms.ToolStripMenuItem { Text = "Start at logon", Checked = on };
+        logon.Click += (_, _) => { if (on) LogonTask.TurnOff(); else LogonTask.TurnOn(exe); };
+        _menu.Items.Add(logon);
         var log = new Forms.ToolStripMenuItem { Text = "Show log", Enabled = Log.FilePath is not null };
         log.Click += (_, _) => Process.Start(new ProcessStartInfo(Log.FilePath!) { UseShellExecute = true });
         _menu.Items.Add(log);
