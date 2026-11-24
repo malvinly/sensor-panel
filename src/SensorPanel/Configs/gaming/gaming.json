@@ -1,6 +1,6 @@
 {
-  // For gaming: the foreground game's frames per second, huge, with a minute of history and the
-  // power draw underneath; CPU, GPU and memory tiles on the right. fps reads "--" outside games
+  // For gaming: the foreground game's frames per second, huge, under the time, with a minute of
+  // history and the power draw underneath; CPU, GPU and memory tiles on the right. fps reads "--" outside games
   // (see docs/guide.md#sensor-keys).
   // Two values to fit to your PC: the fps scale's 165 (your monitor's refresh rate) and the VRAM
   // bar's 16 (your graphics card's memory in GB).
@@ -12,40 +12,42 @@
     // ── FPS ─────────────────────────────────────────────────────────────────
     { "type": "panel", "x": 8, "y": 8, "w": 228, "h": 304, "radius": 12,
       "fill": "#0B1620", "border": { "color": "#173445", "width": 1 } },
-    { "type": "text", "value": "FRAMES PER SECOND", "x": 122, "y": 26, "align": "center", "size": 12, "weight": 600, "color": "#5FA9C4" },
+    { "type": "text", "value": "FPS", "x": 24, "y": 22, "size": 18, "weight": 600, "color": "#5FA9C4" },
+    { "type": "text", "clock": "h:mm tt", "x": 220, "y": 22, "align": "right", "size": 18, "weight": 600, "color": "#FFFFFF" },
     { "type": "text", "sensor": "fps", "format": "{0:F0}", "x": 122, "y": 58, "align": "center", "size": 112, "weight": 700, "color": "#39D5FF" },
     { "type": "graph", "sensor": "fps", "x": 22, "y": 172, "w": 200, "h": 76, "history": 60,
       "min": 0, "max": 165, "color": "#39D5FF", "thickness": 2, "fill": true },
     { "type": "panel", "x": 22, "y": 260, "w": 200, "h": 1, "fill": "#173445" },
-    { "type": "text", "value": "POWER DRAW", "x": 24, "y": 272, "size": 10, "weight": 600, "color": "#5FA9C4" },
-    { "type": "text", "sensors": ["cpu.power", "gpu.power"], "format": "CPU {0:F0} W    GPU {1:F0} W", "x": 24, "y": 289, "size": 14, "weight": 600 },
+    { "type": "text", "value": "POWER DRAW", "x": 24, "y": 270, "size": 14, "weight": 600, "color": "#5FA9C4" },
+    { "type": "text", "sensor": "cpu.power", "format": "CPU {0:F0} W", "x": 24, "y": 290, "size": 18, "weight": 600 },
+    { "type": "text", "sensor": "gpu.power", "format": "GPU {0:F0} W", "x": 220, "y": 290, "align": "right", "size": 18, "weight": 600 },
 
     // ── CPU ─────────────────────────────────────────────────────────────────
     { "type": "panel", "x": 244, "y": 8, "w": 228, "h": 96, "radius": 10,
       "fill": "#0E1218", "accent": { "edge": "left", "color": "#00E08A", "width": 4 } },
-    { "type": "text", "value": "CPU", "x": 260, "y": 22, "size": 12, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "value": "CPU", "x": 260, "y": 20, "size": 15, "weight": 600, "color": "#8A93A6" },
     { "type": "text", "sensor": "cpu.load", "format": "{0:F0}%", "x": 258, "y": 44, "size": 32, "weight": 600, "color": "#00E08A" },
-    { "type": "text", "sensor": "cpu.temp", "format": "{0:F0}°C", "x": 260, "y": 84, "size": 13, "weight": 600, "color": "#B8C0CF" },
+    { "type": "text", "sensor": "cpu.temp", "format": "{0:F0}°C", "x": 260, "y": 80, "size": 18, "weight": 600, "color": "#B8C0CF" },
     { "type": "graph", "sensor": "cpu.load", "x": 344, "y": 22, "w": 116, "h": 70, "history": 45,
       "min": 0, "max": 100, "color": "#00E08A", "thickness": 2, "fill": true },
 
     // ── GPU ─────────────────────────────────────────────────────────────────
     { "type": "panel", "x": 244, "y": 112, "w": 228, "h": 96, "radius": 10,
       "fill": "#0E1218", "accent": { "edge": "left", "color": "#FF7A3D", "width": 4 } },
-    { "type": "text", "value": "GPU", "x": 260, "y": 126, "size": 12, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "value": "GPU", "x": 260, "y": 124, "size": 15, "weight": 600, "color": "#8A93A6" },
     { "type": "text", "sensor": "gpu.load", "format": "{0:F0}%", "x": 258, "y": 148, "size": 32, "weight": 600, "color": "#FF7A3D" },
-    { "type": "text", "sensor": "gpu.temp", "format": "{0:F0}°C", "x": 260, "y": 188, "size": 13, "weight": 600, "color": "#B8C0CF" },
+    { "type": "text", "sensor": "gpu.temp", "format": "{0:F0}°C", "x": 260, "y": 184, "size": 18, "weight": 600, "color": "#B8C0CF" },
     { "type": "graph", "sensor": "gpu.load", "x": 344, "y": 126, "w": 116, "h": 70, "history": 45,
       "min": 0, "max": 100, "color": "#FF7A3D", "thickness": 2, "fill": true },
 
     // ── Memory ──────────────────────────────────────────────────────────────
     { "type": "panel", "x": 244, "y": 216, "w": 228, "h": 96, "radius": 10,
       "fill": "#0E1218", "accent": { "edge": "left", "color": "#A56BFF", "width": 4 } },
-    { "type": "text", "value": "VRAM", "x": 260, "y": 232, "size": 11, "weight": 600, "color": "#8A93A6" },
-    { "type": "text", "sensors": ["gpu.mem.used", "gpu.mem.total"], "format": "{0:F1} / {1:F0} GB", "x": 460, "y": 230, "align": "right", "size": 13, "weight": 600 },
+    { "type": "text", "value": "VRAM", "x": 260, "y": 230, "size": 15, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensors": ["gpu.mem.used", "gpu.mem.total"], "format": "{0:F1} / {1:F0} GB", "x": 460, "y": 229, "align": "right", "size": 17, "weight": 600 },
     { "type": "bar", "sensor": "gpu.mem.used", "x": 260, "y": 250, "w": 200, "h": 10, "min": 0, "max": 16, "radius": 5, "color": "#FF7A3D", "background": "#1A1F27" },
-    { "type": "text", "value": "RAM", "x": 260, "y": 274, "size": 11, "weight": 600, "color": "#8A93A6" },
-    { "type": "text", "sensors": ["mem.used", "mem.total"], "format": "{0:F1} / {1:F0} GB", "x": 460, "y": 272, "align": "right", "size": 13, "weight": 600 },
+    { "type": "text", "value": "RAM", "x": 260, "y": 272, "size": 15, "weight": 600, "color": "#8A93A6" },
+    { "type": "text", "sensors": ["mem.used", "mem.total"], "format": "{0:F1} / {1:F0} GB", "x": 460, "y": 271, "align": "right", "size": 17, "weight": 600 },
     { "type": "bar", "sensor": "mem.load", "x": 260, "y": 292, "w": 200, "h": 10, "min": 0, "max": 100, "radius": 5, "color": "#A56BFF", "background": "#1A1F27" }
   ]
 }
