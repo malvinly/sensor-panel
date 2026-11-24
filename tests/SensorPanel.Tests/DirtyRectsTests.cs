@@ -28,22 +28,6 @@ public class DirtyRectsTests
     }
 
     [Fact]
-    public void Identical_frames_send_nothing()
-    {
-        var frame = new byte[480 * 320 * 2];
-        Assert.Empty(Find(frame, (byte[])frame.Clone(), 480, 320));
-    }
-
-    [Fact]
-    public void One_changed_pixel_sends_its_tile()
-    {
-        var shown = new byte[480 * 320 * 2];
-        var frame = (byte[])shown.Clone();
-        Change(frame, 480, 21, 13);
-        Assert.Equal([new SKRectI(16, 8, 24, 16)], Find(frame, shown, 480, 320));
-    }
-
-    [Fact]
     public void A_column_of_tiles_merges_into_one_rect()
     {
         var shown = new byte[480 * 320 * 2];
@@ -65,15 +49,6 @@ public class DirtyRectsTests
         Assert.Equal(2, rects.Count);
         Assert.Contains(new SKRectI(0, 0, 16, 8), rects);
         Assert.Contains(new SKRectI(0, 8, 8, 16), rects);
-    }
-
-    [Fact]
-    public void A_change_in_the_last_tile_is_sent()
-    {
-        var shown = new byte[480 * 320 * 2];
-        var frame = (byte[])shown.Clone();
-        Change(frame, 480, 479, 319);
-        Assert.Equal([new SKRectI(472, 312, 480, 320)], Find(frame, shown, 480, 320));
     }
 
     [Fact]

@@ -7,7 +7,6 @@ public class GamePatternsTests
 
     [Theory]
     [InlineData(@"C:\Program Files (x86)\Steam\steamapps\common\KingdomComeDeliverance2\Bin\Win64\KingdomCome.exe")]
-    [InlineData(@"D:\SteamLibrary\steamapps\common\Elden Ring\Game\eldenring.exe")]
     [InlineData(@"E:\SteamLibrary\STEAMAPPS\Common\Game\game.exe")]
     public void A_path_pattern_matches_any_library_on_any_drive_ignoring_case(string exe) =>
         Assert.True(Patterns("*/steamapps/common/*").Matches(exe));

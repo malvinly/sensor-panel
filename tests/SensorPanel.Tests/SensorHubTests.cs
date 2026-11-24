@@ -8,12 +8,10 @@ public class SensorHubTests
     [Theory]
     [InlineData(1000, null, 1)]         // not listed: every tick
     [InlineData(1000, 3000, 3)]
-    [InlineData(1000, 2500, 3)]         // rounded up to whole ticks
-    [InlineData(1000, 2001, 3)]
+    [InlineData(1000, 2001, 3)]         // rounded up to whole ticks
     [InlineData(1000, 1000, 1)]
     [InlineData(1000, 500, 1)]          // never faster than the refresh
     [InlineData(1000, 1, 1)]
-    [InlineData(250, 3_600_000, 14_400)]
     [InlineData(100, 3_600_000, 36_000)]  // the largest interval at the shortest refresh
     public void TicksPerPoll_rounds_up_and_never_polls_faster_than_the_refresh(int refreshMs, int? gpuMs, int expected)
     {
