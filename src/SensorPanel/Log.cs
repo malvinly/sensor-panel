@@ -12,15 +12,12 @@ public static class Log
     /// <summary>Raised for every warning logged with notify set, on whichever thread logged it.</summary>
     public static event Action<string>? Warned;
 
-    public static string? FilePath { get; private set; }
-
     /// <summary>Starts a fresh log file. Without this call (the command-line modes, a --png run) only the console is written.</summary>
     public static void Start(string path)
     {
         try
         {
             _file = new StreamWriter(path, append: false) { AutoFlush = true };
-            FilePath = path;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

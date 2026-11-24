@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using SensorPanel.Layout;
 using Forms = System.Windows.Forms;
@@ -115,9 +114,6 @@ internal sealed class Tray : IDisposable
         var logon = new Forms.ToolStripMenuItem { Text = "Start at logon", Checked = on };
         logon.Click += (_, _) => { if (on) LogonTask.TurnOff(); else LogonTask.TurnOn(exe); };
         _menu.Items.Add(logon);
-        var log = new Forms.ToolStripMenuItem { Text = "Show log", Enabled = Log.FilePath is not null };
-        log.Click += (_, _) => Process.Start(new ProcessStartInfo(Log.FilePath!) { UseShellExecute = true });
-        _menu.Items.Add(log);
         var exit = new Forms.ToolStripMenuItem { Text = "Exit" };
         exit.Click += (_, _) => Exit();
         _menu.Items.Add(exit);
