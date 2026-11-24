@@ -31,7 +31,7 @@ public sealed class SerialPresenter : IPresenter
     public int LastBytes { get; private set; }
     public int LastRects { get; private set; }
 
-    public bool NeedsFrame => _shown is null;
+    public bool NeedsFrame => _shown is null || !_configured;
 
     public void Configure(Orientation orientation, int brightness)
     {

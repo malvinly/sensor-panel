@@ -40,7 +40,7 @@ internal static class Program
             }
         }
 
-        // One instance owns the panel's COM port, the log file and the remembered selection.
+        // One instance owns the panel's COM port, the log file and state.json.
         // A --png run is allowed beside it, and for that reason writes neither file (below).
         Mutex? single = null;
         if (pngPath is null)
@@ -57,14 +57,13 @@ internal static class Program
         }
 
         string configs = Path.Combine(AppContext.BaseDirectory, "configs");
-        string lastConfigFile = Path.Combine(AppContext.BaseDirectory, "last-config.txt");
 
         // Without this WinForms leaves the process DPI-unaware, and Windows blurs the menu.
         System.Windows.Forms.Application.SetHighDpiMode(System.Windows.Forms.HighDpiMode.SystemAware);
         System.Windows.Forms.Application.EnableVisualStyles();     // the menu in Windows' own colours
         var worker = new Worker(pngPath is not null ? new PngPresenter(pngPath) : new SerialPresenter(), verbose);
         // The tray comes before the first warning, so that it gets a balloon.
-        using var tray = new Tray(worker, configs, pngPath is null ? lastConfigFile : null);
+        using var tray = new Tray(worker, configs);
 
         if (pngPath is null) Log.Start(Path.Combine(AppContext.BaseDirectory, "SensorPanel.log"));
         WriteDefaultConfigs(configs);
@@ -74,10 +73,14 @@ internal static class Program
         // A --png run is a preview beside the tray instance: it shows the config it was given.
         if (pngPath is null) tray.WatchGames(settings.Gaming);
 
+        // What was picked from the menu. Read only now, after Log.Start, so a problem with the file
+        // reaches the log; a --png run reads it too, for the same config, but never writes it.
+        tray.State = TrayState.Load(Path.Combine(AppContext.BaseDirectory, "state.json"), writable: pngPath is null);
+
         // --config wins for this run; otherwise the last config picked from the menu, or the default.
         string fallback = DefaultConfig(configs);
-        string? last = File.Exists(lastConfigFile) ? Path.Combine(configs, File.ReadAllText(lastConfigFile).Trim()) : null;
-        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather, settings.UpsideDown, settings.Brightness);
+        string? last = tray.State.Config is { } picked ? Path.Combine(configs, picked) : null;
+        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather, settings.UpsideDown, settings.Brightness, tray.State.Brightness);
 
         // Ctrl+C blanks the panel on the way out, through the same Exit as the menu item and as
         // Windows shutting down or signing out (which the tray hears itself). Being killed (Task

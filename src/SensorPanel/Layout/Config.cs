@@ -37,11 +37,12 @@ public sealed class Config
 
     /// <summary>
     /// What the panel is set to for this config, given settings.json's "upsideDown" and
-    /// "brightness": the orientation turned 180° if the panel is mounted upside down, and the
-    /// config's own brightness if it has one, else <paramref name="fallbackBrightness"/>.
+    /// "brightness" and the tray's brightness: the orientation turned 180° if the panel is mounted
+    /// upside down, and <paramref name="chosenBrightness"/> if one was picked from the tray, else
+    /// the config's own brightness if it has one, else <paramref name="fallbackBrightness"/>.
     /// </summary>
-    public (Orientation Orientation, int Brightness) ForPanel(bool upsideDown, int fallbackBrightness) =>
-        (upsideDown ? Protocol.Turned(Orientation) : Orientation, Brightness ?? fallbackBrightness);
+    public (Orientation Orientation, int Brightness) ForPanel(bool upsideDown, int fallbackBrightness, int? chosenBrightness) =>
+        (upsideDown ? Protocol.Turned(Orientation) : Orientation, chosenBrightness ?? Brightness ?? fallbackBrightness);
 
     /// <summary>Reads and checks the config. Every problem that can be seen without hardware is a JsonException here.</summary>
     public static Config Load(string path)

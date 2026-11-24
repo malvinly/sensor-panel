@@ -51,7 +51,14 @@ public sealed class ConfigLoadTests : IDisposable
     [InlineData("""{ "orientation": "reverseLandscape" }""", false, 30, Orientation.ReverseLandscape, 30)]
     public void The_panel_gets_the_configs_brightness_over_the_settings_and_is_turned_when_upside_down(
         string json, bool upsideDown, int fallbackBrightness, Orientation orientation, int brightness) =>
-        Assert.Equal((orientation, brightness), Load(json).ForPanel(upsideDown, fallbackBrightness));
+        Assert.Equal((orientation, brightness), Load(json).ForPanel(upsideDown, fallbackBrightness, chosenBrightness: null));
+
+    [Theory]
+    [InlineData("{}", 70)]
+    [InlineData("""{ "brightness": 80 }""", 70)]
+    [InlineData("""{ "brightness": 80 }""", 0)]
+    public void A_brightness_picked_from_the_tray_wins_over_the_configs_and_the_settings(string json, int chosen) =>
+        Assert.Equal(chosen, Load(json).ForPanel(false, 30, chosen).Brightness);
 
     [Fact]
     public void Comments_trailing_commas_and_camel_case_enums_are_accepted()

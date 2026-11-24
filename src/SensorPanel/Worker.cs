@@ -10,7 +10,7 @@ namespace SensorPanel;
 /// The one thread that touches the sensors, the renderer and the presenter: poll, render,
 /// present, once per refreshMs. Writes to the panel block for up to 2.4 s, so the tray's UI
 /// thread never does any of this itself; it only leaves requests here (<see cref="Switch"/>,
-/// <see cref="Stop"/>, and the pauses for sleep and for the monitors being off), which are
+/// <see cref="SetBrightness"/>, <see cref="Stop"/>, and the pauses for sleep and for the monitors being off), which are
 /// picked up between frames, never in the middle of one.
 /// </summary>
 public sealed class Worker(IPresenter presenter, bool verbose)
@@ -21,6 +21,9 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     private string? _requested, _fallback;
     private bool _lhmGpu, _upsideDown;
     private int _fallbackBrightness;
+    private int _chosenBrightness = NoBrightness;   // from the tray; set on the UI thread, read on this one
+    private int _appliedChoice = NoBrightness;      // _chosenBrightness as the presenter was last configured with; worker thread only
+    private const int NoBrightness = -1;
     private WeatherSettings? _weather;
     private readonly ManualResetEventSlim _dark = new(false);   // set once the panel has been blanked for sleep
     private volatile bool _stop, _suspended, _displaysOff;
@@ -46,7 +49,8 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     /// <param name="weather">"weather" from settings.json, for the SensorHub.</param>
     /// <param name="upsideDown">"upsideDown" from settings.json: every config's orientation is turned 180°.</param>
     /// <param name="fallbackBrightness">"brightness" from settings.json, for configs that set none of their own.</param>
-    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather, bool upsideDown, int fallbackBrightness)
+    /// <param name="chosenBrightness">Picked from the tray, over every config's and settings.json's; null for none.</param>
+    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather, bool upsideDown, int fallbackBrightness, int? chosenBrightness)
     {
         _requested = configPath;
         _fallback = fallbackPath;
@@ -54,6 +58,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
         _weather = weather;
         _upsideDown = upsideDown;
         _fallbackBrightness = fallbackBrightness;
+        _chosenBrightness = chosenBrightness ?? NoBrightness;
         _thread = new Thread(Run) { Name = "Panel", IsBackground = true };
         _thread.Start();
     }
@@ -62,6 +67,17 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     public void Switch(string configPath)
     {
         Interlocked.Exchange(ref _requested, configPath);
+        _wake.Set();
+    }
+
+    /// <summary>
+    /// A brightness picked from the tray, over every config's and settings.json's, or null to
+    /// leave it to them again. Sent with the next frame, which comes at once, or once the panel is
+    /// lit again if it is dark for sleep or the monitors.
+    /// </summary>
+    public void SetBrightness(int? percent)
+    {
+        Volatile.Write(ref _chosenBrightness, percent ?? NoBrightness);
         _wake.Set();
     }
 
@@ -114,6 +130,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
                 // With nothing on the panel (startup), a config that will not load gives way to the default.
                 if (Interlocked.Exchange(ref _requested, null) is { } path && !Load(path) && _config is null && path != _fallback)
                     Load(_fallback!);
+                if (_config is not null && Volatile.Read(ref _chosenBrightness) != _appliedChoice) ConfigurePresenter();
                 if (Paused())
                 {
                     presenter.Blank();
@@ -213,11 +230,17 @@ public sealed class Worker(IPresenter presenter, bool verbose)
         _config = config;
         _renderer = renderer;
         _next = _clock.ElapsedMilliseconds;
-        var (orientation, brightness) = config.ForPanel(_upsideDown, _fallbackBrightness);
-        presenter.Configure(orientation, brightness);
+        ConfigurePresenter();
         Log.Info($"Running {Path.GetFileName(path)} ({config.Widgets.Count} widgets, every {config.RefreshMs} ms).");
         ActiveChanged?.Invoke(path);
         return true;
+    }
+
+    private void ConfigurePresenter()
+    {
+        _appliedChoice = Volatile.Read(ref _chosenBrightness);
+        var (orientation, brightness) = _config!.ForPanel(_upsideDown, _fallbackBrightness, _appliedChoice == NoBrightness ? null : _appliedChoice);
+        presenter.Configure(orientation, brightness);
     }
 
     private void Unload()

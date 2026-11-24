@@ -17,16 +17,13 @@ internal sealed class Tray : IDisposable
     private readonly MessageWindow _window;
     private readonly Worker _worker;
     private readonly string _configsDirectory;
-    private readonly string? _lastConfigFile;
     private readonly Selection _selection = new();
     private GameWatcher? _games;    // null when settings.json does not ask for switching
 
-    /// <param name="lastConfigFile">Where the menu choice is remembered, or null not to remember it.</param>
-    public Tray(Worker worker, string configsDirectory, string? lastConfigFile)
+    public Tray(Worker worker, string configsDirectory)
     {
         _worker = worker;
         _configsDirectory = configsDirectory;
-        _lastConfigFile = lastConfigFile;
         _window = new MessageWindow(this);
 
         _icon = new Forms.NotifyIcon
@@ -52,6 +49,13 @@ internal sealed class Tray : IDisposable
         });
         worker.LoadFailed += path => Post(() => _selection.Failed(path));
     }
+
+    /// <summary>
+    /// What the menu picks are remembered in. Program.cs sets it from state.json once the log has
+    /// started, which is after this tray (so that its warnings get a balloon), and before the
+    /// worker and the message loop start; it is never written in a --png run. Until then nothing is remembered.
+    /// </summary>
+    public TrayState State { get; set; } = TrayState.Load(null, writable: false);
 
     /// <summary>Runs <paramref name="action"/> on the UI thread, later. Callable from any thread.</summary>
     public void Post(Action action) => _window.BeginInvoke(action);
@@ -104,6 +108,7 @@ internal sealed class Tray : IDisposable
         }
 
         _menu.Items.Add(new Forms.ToolStripSeparator());
+        _menu.Items.Add(BrightnessMenu());
         // Asked each time, so a task deleted in Task Scheduler shows unticked.
         string exe = Environment.ProcessPath!;
         bool on = LogonTask.IsOn(exe);
@@ -116,6 +121,34 @@ internal sealed class Tray : IDisposable
         var exit = new Forms.ToolStripMenuItem { Text = "Exit" };
         exit.Click += (_, _) => Exit();
         _menu.Items.Add(exit);
+    }
+
+    /// <summary>
+    /// "Layout default" leaves the brightness to the layout and settings.json; a percentage
+    /// overrides both, for every layout, until "Layout default" is picked.
+    /// </summary>
+    private Forms.ToolStripMenuItem BrightnessMenu()
+    {
+        var menu = new Forms.ToolStripMenuItem { Text = "Brightness" };
+        var layout = new Forms.ToolStripMenuItem { Text = "Layout default", Checked = State.Brightness is null };
+        layout.Click += (_, _) => PickBrightness(null);
+        menu.DropDownItems.Add(layout);
+        menu.DropDownItems.Add(new Forms.ToolStripSeparator());
+        for (int percent = 10; percent <= 100; percent += 10)
+        {
+            int p = percent;
+            var item = new Forms.ToolStripMenuItem { Text = $"{p}%", Checked = State.Brightness == p };
+            item.Click += (_, _) => PickBrightness(p);
+            menu.DropDownItems.Add(item);
+        }
+        return menu;
+    }
+
+    private void PickBrightness(int? percent)
+    {
+        State.Brightness = percent;
+        State.Save();
+        _worker.SetBrightness(percent);
     }
 
     /// <summary>Picking the config that is already running reloads it, which is how an edit is applied.</summary>
@@ -131,15 +164,13 @@ internal sealed class Tray : IDisposable
     /// </summary>
     private void Remember(string path)
     {
-        if (_lastConfigFile is null) return;
         // Only one in the menu's folders: "default\default.json", relative to the configs folder.
         if (Path.GetDirectoryName(Path.GetDirectoryName(path)) is not { } parent
             || !parent.Equals(_configsDirectory, StringComparison.OrdinalIgnoreCase)) return;
-        try { File.WriteAllText(_lastConfigFile, Path.GetRelativePath(_configsDirectory, path)); }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            Log.Warn($"Cannot remember the selection in {_lastConfigFile}: {e.Message}");
-        }
+        string config = Path.GetRelativePath(_configsDirectory, path);
+        if (config.Equals(State.Config, StringComparison.OrdinalIgnoreCase)) return;
+        State.Config = config;
+        State.Save();
     }
 
     /// <summary>

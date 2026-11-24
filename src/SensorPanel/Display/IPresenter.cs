@@ -8,16 +8,17 @@ namespace SensorPanel.Display;
 /// </summary>
 public interface IPresenter : IDisposable
 {
-    /// <summary>Panel settings for the frames that follow. Called when a config is loaded.</summary>
+    /// <summary>Panel settings for the frames that follow. Called when a config is loaded, and when the brightness is picked from the tray.</summary>
     void Configure(Orientation orientation, int brightness);
 
     /// <param name="frame">Panel-sized bitmap in <see cref="SKColorType.Rgb565"/>.</param>
     void Present(SKBitmap frame);
 
     /// <summary>
-    /// True while what the panel shows is unknown: it was never reached, or it was lost. The
-    /// next frame is then presented even if nothing in it changed, which is also what retries
-    /// the connection; otherwise a replugged panel would stay blank until a value moved.
+    /// True while what the panel shows is unknown: it was never reached, or it was lost; or while
+    /// settings from <see cref="Configure"/> have not gone out. The next frame is then presented
+    /// even if nothing in it changed, which is also what retries the connection; otherwise a
+    /// replugged panel would stay blank, or a new brightness unsent, until a value moved.
     /// </summary>
     bool NeedsFrame { get; }
 

@@ -6,7 +6,8 @@ The details behind the [README](../README.md): running the app, the config forma
 
 Right-click the icon for the menu:
 
-- **The configs.** Every `.json` file directly inside a subfolder of the `configs` folder beside the exe (one folder per config, such as `configs/default/default.json`, see [Which config runs](#which-config-runs)), listed by its `name` (or its file name if it has none) in alphabetical order, with a tick on the one that is running. Picking one switches the panel to it without a restart, and it is remembered (in `last-config.txt` beside the exe) for the next start. The folder is read each time the menu opens, so a config folder you add appears straight away. Picking the ticked config again reloads it, which is how an edit is applied.
+- **The configs.** Every `.json` file directly inside a subfolder of the `configs` folder beside the exe (one folder per config, such as `configs/default/default.json`, see [Which config runs](#which-config-runs)), listed by its `name` (or its file name if it has none) in alphabetical order, with a tick on the one that is running. Picking one switches the panel to it without a restart, and it is remembered (in `state.json` beside the exe) for the next start. The folder is read each time the menu opens, so a config folder you add appears straight away. Picking the ticked config again reloads it, which is how an edit is applied.
+- **Brightness.** **Layout default** (ticked unless you have picked a percentage) leaves the brightness to the layout's [`brightness`](#top-level), or settings.json's [`brightness`](#brightness) if the layout has none. Picking a percentage, 10% to 100%, changes the panel at once and overrides both, for every layout, until you pick **Layout default** again. The pick is remembered in `state.json` for the next start, as the config is. `state.json` is the app's own file, rewritten on every pick: change these from the menu rather than editing the file.
 - **Start at logon.** Ticked, the app starts 10 seconds after you sign in, with administrator rights and no UAC prompt: it creates a Task Scheduler task named `SensorPanel` that runs this exe (see [Getting every sensor](#getting-every-sensor)). Unticking deletes the task. It is ticked only while that task exists and runs this copy of the exe, so after moving the exe, tick it again.
 - **Show log.** Opens `SensorPanel.log`, also beside the exe and started afresh on every run. Every message the app logs goes there. Warnings (a missing PawnIO driver, panel unavailable, a config that will not load) also pop up as a notification.
 - **Exit.** Turns the panel's screen off, then quits. The next start turns it back on.
@@ -78,7 +79,7 @@ During development, from an elevated terminal at the repository root: `dotnet ru
 
 `src/SensorPanel.Screenshots` renders configs with made-up sensor values and a fixed clock, through the app's own renderer, so it needs no panel, sensors or administrator rights. `dotnet run --project src/SensorPanel.Screenshots` regenerates the README screenshots in `docs/images`; `dotnet run --project src/SensorPanel.Screenshots -- path\to\config.json out.png` renders any config.
 
-`tests/SensorPanel.Tests` holds the unit tests: `dotnet test` from the repository root runs them, without a panel, sensors or administrator rights. They load and render every layout in `src/SensorPanel/Configs` and check that it reads only keys that exist, so run them after adding or editing a layout or a key. The tests also check the config rules, the wire protocol, which parts of a frame are sent, the fps arithmetic, which exes count as games and when the panel switches for them, the task "Start at logon" registers, and the configs folder and settings.json written on first run.
+`tests/SensorPanel.Tests` holds the unit tests: `dotnet test` from the repository root runs them, without a panel, sensors or administrator rights. They load and render every layout in `src/SensorPanel/Configs` and check that it reads only keys that exist, so run them after adding or editing a layout or a key. The tests also check the config rules, the wire protocol, which parts of a frame are sent, the fps arithmetic, which exes count as games and when the panel switches for them, what the tray remembers in state.json, the task "Start at logon" registers, and the configs folder and settings.json written on first run.
 
 The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not matter if Windows renumbers it. If the panel is unplugged or the PC sleeps, the app keeps retrying and repaints when it comes back. Close any other program that drives the panel (such as turing-smart-screen-python) before starting this one.
 
@@ -122,7 +123,7 @@ It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU an
 
 ### `brightness`
 
-`brightness` (default `30`) is the panel's brightness, 0-100, for every layout. A layout with its own [`brightness`](#top-level) uses that instead.
+`brightness` (default `30`) is the panel's brightness, 0-100, for every layout. A layout with its own [`brightness`](#top-level) uses that instead. A percentage picked from the tray's [**Brightness**](#the-tray-icon) menu overrides both.
 
 ### `weather`
 
@@ -162,7 +163,7 @@ Switching configs re-applies everything in the file. If the orientation changes 
 | `name` | file name | Shown in the tray menu and tooltip. |
 | `refreshMs` | `1000` | Sensor poll and redraw interval. At least 100. |
 | `orientation` | `"landscape"` | `landscape` (480x320), `portrait` (320x480), `reverseLandscape`, `reversePortrait`. A panel mounted upside down turns every layout with [`upsideDown`](#upsidedown) in settings.json instead. |
-| `brightness` | settings.json's | 0-100. Overrides [`brightness`](#brightness) in settings.json for this layout. |
+| `brightness` | settings.json's | 0-100. Overrides [`brightness`](#brightness) in settings.json for this layout. A percentage picked from the tray overrides both. |
 | `background` | `"#000000"` | Colour behind all widgets. |
 | `sensorIntervals` | `{}` | Poll expensive hardware less often. See below. |
 | `pauseWhenDisplayOff` | `true` | Turn the panel off, and stop polling, while Windows has the monitors off. |
