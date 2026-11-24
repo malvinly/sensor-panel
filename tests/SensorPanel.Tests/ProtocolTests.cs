@@ -68,4 +68,12 @@ public class ProtocolTests
         Protocol.WriteOrientation(b, orientation, 320, 480);
         Assert.Equal(code, b[6]);
     }
+
+    [Theory]
+    [InlineData(Orientation.Portrait, Orientation.ReversePortrait)]
+    [InlineData(Orientation.ReversePortrait, Orientation.Portrait)]
+    [InlineData(Orientation.Landscape, Orientation.ReverseLandscape)]
+    [InlineData(Orientation.ReverseLandscape, Orientation.Landscape)]
+    public void Turning_an_orientation_keeps_its_shape_and_flips_it(Orientation orientation, Orientation turned) =>
+        Assert.Equal(turned, Protocol.Turned(orientation));
 }

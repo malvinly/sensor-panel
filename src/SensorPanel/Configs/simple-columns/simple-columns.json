@@ -4,7 +4,6 @@
   "name": "Simple columns",
   "refreshMs": 1000,
   "orientation": "landscape",
-  "brightness": 30,
   "background": "#05070A",
   "widgets": [
     // ── CPU ─────────────────────────────────────────────────────────────────

@@ -77,7 +77,7 @@ internal static class Program
         // --config wins for this run; otherwise the last config picked from the menu, or the default.
         string fallback = DefaultConfig(configs);
         string? last = File.Exists(lastConfigFile) ? Path.Combine(configs, File.ReadAllText(lastConfigFile).Trim()) : null;
-        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather);
+        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather, settings.UpsideDown, settings.Brightness);
 
         // Ctrl+C blanks the panel on the way out, through the same Exit as the menu item and as
         // Windows shutting down or signing out (which the tray hears itself). Being killed (Task
@@ -107,6 +107,10 @@ internal static class Program
         public GamingSettings? Gaming { get; set; }
         /// <summary>Where the weather.* keys are for. Sent to Open-Meteo, rounded, while a layout shows the weather.</summary>
         public WeatherSettings? Weather { get; set; }
+        /// <summary>The panel is mounted the other way up: every config's orientation is turned 180°.</summary>
+        public bool UpsideDown { get; set; }
+        /// <summary>0-100, for every config that does not set its own.</summary>
+        public int Brightness { get; set; } = 30;
     }
 
     /// <summary>"gaming": the layout to show while a game runs (see <see cref="Tray.WatchGames"/>).</summary>

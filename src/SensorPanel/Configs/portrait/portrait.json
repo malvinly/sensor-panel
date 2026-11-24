@@ -4,7 +4,6 @@
   "name": "Portrait",
   "refreshMs": 2000,
   "orientation": "portrait",
-  "brightness": 30,
   "background": "#06080B",
   "widgets": [
     { "type": "text", "clock": "HH:mm", "x": 160, "y": 24, "align": "center",

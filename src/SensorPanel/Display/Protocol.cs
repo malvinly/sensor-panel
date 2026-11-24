@@ -43,6 +43,16 @@ public static class Protocol
         b[9] = (byte)(height >> 8);
         b[10] = (byte)(height & 255);
     }
+
+    /// <summary>The same orientation turned 180°, for a panel mounted the other way up.</summary>
+    public static Orientation Turned(Orientation orientation) => orientation switch
+    {
+        Orientation.Portrait => Orientation.ReversePortrait,
+        Orientation.ReversePortrait => Orientation.Portrait,
+        Orientation.Landscape => Orientation.ReverseLandscape,
+        Orientation.ReverseLandscape => Orientation.Landscape,
+        _ => throw new ArgumentOutOfRangeException(nameof(orientation), orientation, null),     // Config.Load lets no other through
+    };
 }
 
 /// <summary>Values are the panel's own orientation codes.</summary>

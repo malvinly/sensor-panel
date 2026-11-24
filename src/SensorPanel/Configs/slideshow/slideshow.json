@@ -6,7 +6,6 @@
   "name": "Slideshow",
   "refreshMs": 1000,
   "orientation": "landscape",
-  "brightness": 30,
   "background": "#05070C",
   "widgets": [
     // ── Photo ───────────────────────────────────────────────────────────────

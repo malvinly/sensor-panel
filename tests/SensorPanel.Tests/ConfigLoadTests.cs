@@ -36,11 +36,22 @@ public sealed class ConfigLoadTests : IDisposable
         Assert.Null(config.Name);
         Assert.Equal(1000, config.RefreshMs);
         Assert.Equal(Orientation.Landscape, config.Orientation);
-        Assert.Equal(30, config.Brightness);
+        Assert.Null(config.Brightness);       // settings.json's is used
         Assert.Equal(SKColors.Black, config.Background);
         Assert.True(config.PauseWhenDisplayOff);
         Assert.Empty(config.Widgets);
     }
+
+    [Theory]
+    [InlineData("{}", false, 30, Orientation.Landscape, 30)]                                  // settings.json's brightness
+    [InlineData("""{ "brightness": 80 }""", false, 30, Orientation.Landscape, 80)]           // the config's own wins
+    [InlineData("""{ "brightness": 0 }""", false, 30, Orientation.Landscape, 0)]             // even 0 is the config's own
+    [InlineData("""{ "orientation": "portrait" }""", true, 50, Orientation.ReversePortrait, 50)]
+    [InlineData("""{ "orientation": "reverseLandscape" }""", true, 30, Orientation.Landscape, 30)]
+    [InlineData("""{ "orientation": "reverseLandscape" }""", false, 30, Orientation.ReverseLandscape, 30)]
+    public void The_panel_gets_the_configs_brightness_over_the_settings_and_is_turned_when_upside_down(
+        string json, bool upsideDown, int fallbackBrightness, Orientation orientation, int brightness) =>
+        Assert.Equal((orientation, brightness), Load(json).ForPanel(upsideDown, fallbackBrightness));
 
     [Fact]
     public void Comments_trailing_commas_and_camel_case_enums_are_accepted()
@@ -72,6 +83,7 @@ public sealed class ConfigLoadTests : IDisposable
     [Fact] public void An_unknown_widget_type_is_an_error() => RejectsWidgets("""{ "type": "dial", "sensor": "cpu.load" }""");
     [Fact] public void A_bar_without_a_sensor_is_an_error() => RejectsWidgets("""{ "type": "bar" }""");
     [Fact] public void An_unknown_orientation_is_an_error() => Rejects("""{ "orientation": "sideways" }""");
+    [Fact] public void A_numeric_orientation_outside_the_four_is_an_error() => Rejects("""{ "orientation": 7 }""", "orientation");
 
     [Theory]
     [InlineData("red")]

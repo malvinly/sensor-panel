@@ -4,6 +4,12 @@
   // true: read the GPU through LibreHardwareMonitor instead of NVIDIA's NVML.
   "lhmGpu": false,
 
+  // true: the panel is mounted the other way up, so turn every layout 180°.
+  "upsideDown": false,
+
+  // Panel brightness, 0-100. A layout with its own "brightness" uses that instead.
+  "brightness": 30,
+
   // Where the weather on the default layout is for, in decimal degrees (south and west are
   // negative). Until both are set, the weather shows "--". While a layout shows the weather,
   // they are sent to Open-Meteo (open-meteo.com), rounded to two decimals, about every 15 minutes.

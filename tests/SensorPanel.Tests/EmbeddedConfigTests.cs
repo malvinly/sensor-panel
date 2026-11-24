@@ -46,6 +46,9 @@ public class EmbeddedConfigTests
         // With the reader's own options: a typo in the shipped file would make the app ignore all of it.
         var settings = JsonSerializer.Deserialize<Program.Settings>(File.ReadAllText(path), Config.Options)!;
         Assert.False(settings.LhmGpu);
+        Assert.False(settings.UpsideDown);
+        Assert.Equal(30, settings.Brightness);
+        Assert.Equal(30, JsonSerializer.Deserialize<Program.Settings>("{}", Config.Options)!.Brightness);   // a settings.json from before it gets the same
         Assert.Equal("gaming/gaming.json", settings.Gaming!.Config);
         Assert.Empty(settings.Gaming.Games!);
         var defaults = new Program.GamingSettings();     // what a "gaming" without the two timings gets

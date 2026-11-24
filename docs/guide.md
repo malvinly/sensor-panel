@@ -84,11 +84,13 @@ The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not ma
 
 ## settings.json
 
-A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has three settings:
+A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has five settings:
 
 ```json
 {
   "lhmGpu": false,
+  "upsideDown": false,
+  "brightness": 30,
   "weather": { "latitude": 51.51, "longitude": -0.13, "fahrenheit": false },
   "gaming": {
     "config": "gaming/gaming.json",
@@ -113,6 +115,14 @@ Use `lhmGpu` when:
 - an NVML reading looks wrong on your card.
 
 It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use. The default layout polls the GPU too, though it shows no GPU card: `power.total` needs `gpu.power`.
+
+### `upsideDown`
+
+`upsideDown` (default `false`) is for a panel mounted the other way up: every layout is shown turned 180°, so `landscape` goes out as `reverseLandscape`, `portrait` as `reversePortrait`, and the other way round. The panel does the turning, so it costs nothing, and layouts need no change. A layout's own [`orientation`](#top-level) still decides between landscape and portrait.
+
+### `brightness`
+
+`brightness` (default `30`) is the panel's brightness, 0-100, for every layout. A layout with its own [`brightness`](#top-level) uses that instead.
 
 ### `weather`
 
@@ -151,8 +161,8 @@ Switching configs re-applies everything in the file. If the orientation changes 
 |---|---|---|
 | `name` | file name | Shown in the tray menu and tooltip. |
 | `refreshMs` | `1000` | Sensor poll and redraw interval. At least 100. |
-| `orientation` | `"landscape"` | `landscape` (480x320), `portrait` (320x480), `reverseLandscape`, `reversePortrait`. |
-| `brightness` | `30` | 0-100. |
+| `orientation` | `"landscape"` | `landscape` (480x320), `portrait` (320x480), `reverseLandscape`, `reversePortrait`. A panel mounted upside down turns every layout with [`upsideDown`](#upsidedown) in settings.json instead. |
+| `brightness` | settings.json's | 0-100. Overrides [`brightness`](#brightness) in settings.json for this layout. |
 | `background` | `"#000000"` | Colour behind all widgets. |
 | `sensorIntervals` | `{}` | Poll expensive hardware less often. See below. |
 | `pauseWhenDisplayOff` | `true` | Turn the panel off, and stop polling, while Windows has the monitors off. |

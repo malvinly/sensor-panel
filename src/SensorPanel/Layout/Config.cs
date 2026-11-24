@@ -13,7 +13,8 @@ public sealed class Config
     public string? Name { get; set; }
     public int RefreshMs { get; set; } = 1000;
     public Orientation Orientation { get; set; } = Orientation.Landscape;
-    public int Brightness { get; set; } = 30;
+    /// <summary>0-100, overriding settings.json's "brightness" for this config. Optional.</summary>
+    public int? Brightness { get; set; }
     public SKColor Background { get; set; } = SKColors.Black;
     /// <summary>
     /// Slower poll intervals in ms for expensive hardware, by sensor key group (the part of a
@@ -34,6 +35,14 @@ public sealed class Config
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new ColorConverter() },
     };
 
+    /// <summary>
+    /// What the panel is set to for this config, given settings.json's "upsideDown" and
+    /// "brightness": the orientation turned 180° if the panel is mounted upside down, and the
+    /// config's own brightness if it has one, else <paramref name="fallbackBrightness"/>.
+    /// </summary>
+    public (Orientation Orientation, int Brightness) ForPanel(bool upsideDown, int fallbackBrightness) =>
+        (upsideDown ? Protocol.Turned(Orientation) : Orientation, Brightness ?? fallbackBrightness);
+
     /// <summary>Reads and checks the config. Every problem that can be seen without hardware is a JsonException here.</summary>
     public static Config Load(string path)
     {
@@ -41,6 +50,9 @@ public sealed class Config
                      ?? throw new JsonException("Config file is empty.");
 
         if (config.RefreshMs < 100) throw new JsonException("refreshMs must be at least 100.");
+        // The enum converter also takes plain numbers, which would go to the panel as they are.
+        if (!Enum.IsDefined(config.Orientation))
+            throw new JsonException("orientation must be one of: landscape, portrait, reverseLandscape, reversePortrait.");
 
         foreach (var (group, ms) in config.SensorIntervals)
         {

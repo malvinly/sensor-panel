@@ -19,7 +19,8 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private Thread? _thread;
     private string? _requested, _fallback;
-    private bool _lhmGpu;
+    private bool _lhmGpu, _upsideDown;
+    private int _fallbackBrightness;
     private WeatherSettings? _weather;
     private readonly ManualResetEventSlim _dark = new(false);   // set once the panel has been blanked for sleep
     private volatile bool _stop, _suspended, _displaysOff;
@@ -43,12 +44,16 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     /// <param name="fallbackPath">Loaded instead if <paramref name="configPath"/> cannot be.</param>
     /// <param name="lhmGpu">"lhmGpu" from settings.json, for the SensorHub.</param>
     /// <param name="weather">"weather" from settings.json, for the SensorHub.</param>
-    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather)
+    /// <param name="upsideDown">"upsideDown" from settings.json: every config's orientation is turned 180°.</param>
+    /// <param name="fallbackBrightness">"brightness" from settings.json, for configs that set none of their own.</param>
+    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather, bool upsideDown, int fallbackBrightness)
     {
         _requested = configPath;
         _fallback = fallbackPath;
         _lhmGpu = lhmGpu;
         _weather = weather;
+        _upsideDown = upsideDown;
+        _fallbackBrightness = fallbackBrightness;
         _thread = new Thread(Run) { Name = "Panel", IsBackground = true };
         _thread.Start();
     }
@@ -208,7 +213,8 @@ public sealed class Worker(IPresenter presenter, bool verbose)
         _config = config;
         _renderer = renderer;
         _next = _clock.ElapsedMilliseconds;
-        presenter.Configure(config.Orientation, config.Brightness);
+        var (orientation, brightness) = config.ForPanel(_upsideDown, _fallbackBrightness);
+        presenter.Configure(orientation, brightness);
         Log.Info($"Running {Path.GetFileName(path)} ({config.Widgets.Count} widgets, every {config.RefreshMs} ms).");
         ActiveChanged?.Invoke(path);
         return true;
