@@ -39,6 +39,20 @@ public class SensorHubTests
     }
 
     [Fact]
+    public void Wall_power_brings_the_cpu_and_gpu_power()
+    {
+        Assert.True(SensorHub.KeysToRead(["power.wall"]).SetEquals(["power.wall", "cpu.power", "gpu.power"]));
+    }
+
+    [Fact]
+    public void Wall_power_is_a_straight_line_through_the_total()
+    {
+        var wall = new WallPowerSettings { Scale = 1.1, Offset = 40 };
+        Assert.Equal(40, wall.At(0), 9);
+        Assert.Equal(480, wall.At(400), 9);
+    }
+
+    [Fact]
     public void Other_keys_are_read_as_they_are_once_each()
     {
         Assert.True(SensorHub.KeysToRead(["cpu.load", "cpu.load", "fps", "nope"]).SetEquals(["cpu.load", "fps", "nope"]));

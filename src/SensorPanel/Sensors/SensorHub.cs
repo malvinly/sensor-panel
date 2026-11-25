@@ -92,6 +92,7 @@ public sealed class SensorHub : IDisposable
     private DiskActivity? _diskActivity;
     private Weather? _weather;
     private readonly WeatherSettings? _weatherSettings;
+    private readonly WallPowerSettings _wallPower;
 
     private static readonly string[] DiskSpaceKeys = ["disk.total", "disk.free", "disk.used", "disk.load"];
 
@@ -108,9 +109,12 @@ public sealed class SensorHub : IDisposable
     /// <param name="keys">The keys the widgets read; only these are bound, and only their devices polled.</param>
     /// <param name="lhmGpu">Read the GPU through LHM even when NVML is there ("lhmGpu" in settings.json).</param>
     /// <param name="weather">Where the weather.* keys are for ("weather" in settings.json).</param>
-    public SensorHub(int refreshMs, IReadOnlyDictionary<string, int> intervals, IEnumerable<string> keys, bool lhmGpu, WeatherSettings? weather = null)
+    /// <param name="wallPower">How power.wall is worked out from power.total ("wallPower" in settings.json).</param>
+    public SensorHub(int refreshMs, IReadOnlyDictionary<string, int> intervals, IEnumerable<string> keys, bool lhmGpu,
+        WeatherSettings? weather = null, WallPowerSettings? wallPower = null)
     {
         _weatherSettings = weather;
+        _wallPower = wallPower ?? new();
         _nvml = lhmGpu ? null : Nvml.Open();
         _computer.IsGpuEnabled = _nvml is null;     // once LHM polls the GPU at all, it pays the whole 77 ms
         _computer.Open();
@@ -233,6 +237,7 @@ public sealed class SensorHub : IDisposable
     {
         ["mem.total"] = ["mem.used", "mem.free"],
         ["power.total"] = ["cpu.power", "gpu.power"],
+        ["power.wall"] = ["cpu.power", "gpu.power"],    // through power.total, which AddDerived works out first
     };
 
     /// <summary>
@@ -244,6 +249,7 @@ public sealed class SensorHub : IDisposable
     [
         "mem.total",
         "power.total",
+        "power.wall",
         .. DiskSpaceKeys,
         DiskActivity.ReadKey, DiskActivity.WriteKey,
         "uptime.days", "uptime.hours", "uptime.minutes",
@@ -264,8 +270,11 @@ public sealed class SensorHub : IDisposable
         // not what the wall socket sees. Like any key, it is absent ("--") when either is missing,
         // rather than a total that quietly leaves one out.
         if (Snapshot.TryGetValue("cpu.power", out var cpuPower) && Snapshot.TryGetValue("gpu.power", out var gpuPower))
+        {
             Snapshot["power.total"] = cpuPower + gpuPower;
-        else Snapshot.Remove("power.total");
+            Snapshot["power.wall"] = _wallPower.At(cpuPower + gpuPower);
+        }
+        else { Snapshot.Remove("power.total"); Snapshot.Remove("power.wall"); }
 
         // Each read of drive space is a GetDiskFreeSpaceEx call, for numbers that move over
         // minutes; between reads the keys keep their values in the snapshot.
@@ -336,5 +345,21 @@ public sealed class SensorHub : IDisposable
         _diskActivity?.Dispose();
         _weather?.Dispose();
     }
+}
+
+/// <summary>
+/// settings.json's "wallPower": what the PC draws from the wall, as a straight line through
+/// power.total (CPU + GPU), which leaves out the board, RAM, fans, drives and the PSU's own losses.
+/// The defaults are an estimate for a Ryzen 7 9850X3D, RTX 5070 Ti, X870 board, 7 ARGB fans, 2 NVMe
+/// drives and a 1000 W Gold PSU. Measured at the wall, two readings give the line: see docs/guide.md.
+/// </summary>
+public sealed class WallPowerSettings
+{
+    /// <summary>Watts at the wall for each watt of power.total.</summary>
+    public double Scale { get; set; } = 1.15;
+    /// <summary>Watts at the wall on top of that.</summary>
+    public double Offset { get; set; } = 49;
+
+    public double At(double total) => Scale * total + Offset;
 }
 

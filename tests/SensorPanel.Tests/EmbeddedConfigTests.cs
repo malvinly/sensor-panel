@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SensorPanel.Layout;
+using SensorPanel.Sensors;
 
 namespace SensorPanel.Tests;
 
@@ -56,6 +57,8 @@ public class EmbeddedConfigTests
         Assert.Null(settings.Weather!.Latitude);      // no location until the user gives one: nothing is sent anywhere
         Assert.Null(settings.Weather.Longitude);
         Assert.False(settings.Weather.Fahrenheit);
+        var estimate = new WallPowerSettings();     // what a settings.json without "wallPower" gets
+        Assert.Equal((estimate.Scale, estimate.Offset), (settings.WallPower!.Scale, settings.WallPower.Offset));
         Assert.False(File.Exists(path + ".new"));
     }
 

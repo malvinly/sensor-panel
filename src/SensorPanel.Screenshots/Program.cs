@@ -44,6 +44,7 @@ static void Render(string configPath, string outPath, bool gaming = false)
     var game = new GameState(new Random(11));
     var disk = new Random(13);  // its own, so adding the disk values left the other walks as they were
     var s = new Dictionary<string, double>();
+    var wall = new SensorPanel.Sensors.WallPowerSettings();     // the shipped estimate
     double cpu = 18, gpu = 35, net = 8, read = 20, write = 6;
 
     // Enough ticks to fill the longest graph's history.
@@ -81,6 +82,7 @@ static void Render(string configPath, string outPath, bool gaming = false)
         s["net.down"] = net;
         s["net.up"] = net / 4;
         s["power.total"] = s["cpu.power"] + s["gpu.power"];
+        s["power.wall"] = wall.At(s["power.total"]);
         s["weather.temp"] = 12;
         s["weather.high"] = 15;
         s["weather.low"] = 7;
@@ -94,6 +96,7 @@ static void Render(string configPath, string outPath, bool gaming = false)
         {
             Game(game, tick, s);
             s["power.total"] = s["cpu.power"] + s["gpu.power"];     // again: the game replaced both
+            s["power.wall"] = wall.At(s["power.total"]);
         }
 
         renderer.Render(s);

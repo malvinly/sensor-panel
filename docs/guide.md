@@ -86,13 +86,14 @@ The COM port is found automatically (USB VID 1A86 / PID 5722), so it does not ma
 
 ## settings.json
 
-A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has five settings:
+A file beside the exe for choices about this PC rather than about a layout. The exe writes it on first start, and again whenever it has been deleted, with every setting at its default; one that is there is never touched. It is read once at start (also by `--png` and `sensors`), so restart the app after editing it. The rules are a config's: comments and trailing commas allowed, unknown names an error. A file that cannot be read is reported and ignored, all of it. It has six settings:
 
 ```json
 {
   "lhmGpu": false,
   "upsideDown": false,
   "brightness": 30,
+  "wallPower": { "scale": 1.15, "offset": 49 },
   "weather": { "latitude": 51.51, "longitude": -0.13, "fahrenheit": false },
   "gaming": {
     "config": "gaming/gaming.json",
@@ -116,7 +117,7 @@ Use `lhmGpu` when:
 - you want fan RPM on a driver too old for NVML's fan call (`gpu.fan` has no value there);
 - an NVML reading looks wrong on your card.
 
-It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use. The default layout polls the GPU too, though it shows no GPU card: `power.total` needs `gpu.power`.
+It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU and ~77 ms in all, every tick, so also add `"sensorIntervals": { "gpu": 3000 }` to each layout you use. The default layout polls the GPU too, though it shows no GPU card: `power.wall` needs `gpu.power`.
 
 ### `upsideDown`
 
@@ -125,6 +126,31 @@ It costs: on my machine LibreHardwareMonitor's GPU poll takes 15-20 ms of CPU an
 ### `brightness`
 
 `brightness` (default `30`) is the panel's brightness, 0-100, for every layout. A layout with its own [`brightness`](#top-level) uses that instead. A percentage picked from the tray's [**Brightness**](#the-tray-icon) menu overrides both.
+
+### `wallPower`
+
+`power.wall` estimates what the whole PC draws from the wall socket, from `power.total` (the CPU and the GPU, the only parts that report their power): `scale × power.total + offset`. `power.total` leaves out the motherboard, RAM, fans, drives and the power supply's own losses. `offset` stands for what draws about the same all the time, and `scale` for the losses that grow with the load. `power.wall` reads `--` whenever `power.total` does. The defaults are `"scale": 1.15, "offset": 49`, also when `wallPower` is left out.
+
+They are an estimate for the PC the default layout was made on: a Ryzen 7 9850X3D, an RTX 5070 Ti, an X870 board, 2×16 GB of DDR5, 7 ARGB fans, 2 NVMe drives and a 1000 W 80 Plus Gold power supply. What `power.total` leaves out there:
+
+| Not in `power.total` | Idle | Gaming |
+|---|---|---|
+| Motherboard: chipset, USB4, Wi-Fi 7, 2.5 GbE, audio | 15 W | 18 W |
+| The CPU's voltage regulators (about 11% of `cpu.power`) | 3 W | 9 W |
+| RAM, 2 sticks | 4 W | 6 W |
+| 7 fans | 5 W | 12 W |
+| Their lighting | 8 W | 8 W |
+| 2 NVMe drives | 2 W | 5 W |
+| **In all** | **37 W** | **58 W** |
+
+With `power.total` at 45 W idle and 380 W in a game, the parts inside the case draw 82 W and 438 W. A Gold power supply is about 82% efficient at 8% of its 1000 W and 90% near half of it, so the wall sees about 100 W and 487 W. The straight line through those two points is, rounded, `1.15 × power.total + 49`. Expect it to be 10-15% out. The GPU's figure is already its whole card, its fans included. USB devices (this panel, a keyboard) are left out: they draw a few watts more.
+
+With a power meter between the PC and the wall, two readings replace the estimate:
+
+1. Set `"scale": 1, "offset": 0` and restart the app: `power.wall` is then `power.total`, so the panel shows what to write down.
+2. Write down the meter and the panel at idle (the desktop, nothing running), then in a game. Both move from second to second, so take what each settles around over ten seconds or so.
+3. `scale = (game wall − idle wall) / (game panel − idle panel)` and `offset = idle wall − scale × idle panel`. For example, 95 W at the wall with 40 W on the panel, and 470 W with 370 W: `scale = 375 / 330 = 1.14`, `offset = 95 − 1.14 × 40 = 49`.
+4. Put those two in, and restart the app.
 
 ### `weather`
 
@@ -181,7 +207,7 @@ By default every device the config's widgets read from is polled every `refreshM
 - The groups are `cpu`, `gpu`, `mem`, `net` and `fan`. `"gpu"` covers every `gpu.*` key. A single key (`"gpu.temp"`) cannot be listed, because hardware is polled a whole device at a time.
 - An interval can only slow a device down. Anything shorter than `refreshMs` is treated as `refreshMs`, and other values are rounded up to a whole number of refreshes: `2500` at a 1000 ms refresh means every 3000 ms. The app logs the interval it ended up with.
 - Between polls a key keeps its last value. Graphs still add a point every refresh, so a graph of a slowed sensor shows flat steps.
-- `disk.*`, `uptime.*`, `power.total` and `weather.*` are computed or fetched, not read from hardware, so they cannot be listed: `uptime.*`, `disk.read` and `disk.write` are refreshed every `refreshMs`, the disk space keys every 30 s because free space moves slowly, and `weather.*` as described under [`weather`](#weather). `power.total` follows `"cpu"` and `"gpu"`, the two it is the sum of. `mem.total` is computed from `mem.used` and `mem.free`, so it follows `"mem"`.
+- `disk.*`, `uptime.*`, `power.total`, `power.wall` and `weather.*` are computed or fetched, not read from hardware, so they cannot be listed: `uptime.*`, `disk.read` and `disk.write` are refreshed every `refreshMs`, the disk space keys every 30 s because free space moves slowly, and `weather.*` as described under [`weather`](#weather). `power.total` and `power.wall` follow `"cpu"` and `"gpu"`, the two they are worked out from. `mem.total` is computed from `mem.used` and `mem.free`, so it follows `"mem"`.
 
 With the GPU read through NVML, no device on my machine is expensive enough to need this. With `"lhmGpu": true` the GPU is: polling it every 3 s instead of every 1 s cuts the app's CPU use by a third to a half. `SensorPanel sensors` shows the poll time of each device LibreHardwareMonitor reads.
 
@@ -307,6 +333,7 @@ Run `SensorPanel sensors` for the live list on your machine. Built in:
 | `fps` † | frames/s | | `disk.read`, `disk.write` | MB/s (drive C:) |
 | `power.total` * | W: `cpu.power` + `gpu.power`; `--` unless both read | | `weather.temp` ‡, `weather.high` ‡, `weather.low` ‡ | °C or °F (now; today's high and low) |
 | `weather.precip` ‡ | % (today's chance of precipitation) | | `weather.code` ‡, `weather.day` ‡ | WMO weather code; 1 by day, 0 at night |
+| `power.wall` * | W: the whole PC at the wall, estimated from `power.total`; see [`wallPower`](#wallpower) | | | |
 
 \* needs administrator + PawnIO.
 

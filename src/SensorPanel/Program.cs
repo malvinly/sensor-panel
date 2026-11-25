@@ -29,7 +29,8 @@ internal static class Program
                 case "sensors":
                     WarnIfNoDriver();
                     var defaults = new Config();
-                    using (var hub = new SensorHub(defaults.RefreshMs, defaults.SensorIntervals, SensorHub.HardwareKeys, ReadSettings().LhmGpu)) hub.Dump(Console.Out);
+                    var read = ReadSettings();
+                    using (var hub = new SensorHub(defaults.RefreshMs, defaults.SensorIntervals, SensorHub.HardwareKeys, read.LhmGpu, wallPower: read.WallPower)) hub.Dump(Console.Out);
                     return 0;
                 case "--config" when i + 1 < args.Length: configPath = Path.GetFullPath(args[++i]); break;
                 case "--png" when i + 1 < args.Length: pngPath = args[++i]; break;
@@ -80,7 +81,7 @@ internal static class Program
         // --config wins for this run; otherwise the last config picked from the menu, or the default.
         string fallback = DefaultConfig(configs);
         string? last = tray.State.Config is { } picked ? Path.Combine(configs, picked) : null;
-        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather, settings.UpsideDown, settings.Brightness, tray.State.Brightness);
+        worker.Start(configPath ?? (File.Exists(last) ? last : fallback), fallback, settings.LhmGpu, settings.Weather, settings.WallPower, settings.UpsideDown, settings.Brightness, tray.State.Brightness);
 
         // Ctrl+C blanks the panel on the way out, through the same Exit as the menu item and as
         // Windows shutting down or signing out (which the tray hears itself). Being killed (Task
@@ -110,6 +111,8 @@ internal static class Program
         public GamingSettings? Gaming { get; set; }
         /// <summary>Where the weather.* keys are for. Sent to Open-Meteo, rounded, while a layout shows the weather.</summary>
         public WeatherSettings? Weather { get; set; }
+        /// <summary>The line from power.total to power.wall. Missing or null: the estimate in <see cref="WallPowerSettings"/>.</summary>
+        public WallPowerSettings? WallPower { get; set; }
         /// <summary>The panel is mounted the other way up: every config's orientation is turned 180°.</summary>
         public bool UpsideDown { get; set; }
         /// <summary>0-100, for every config that does not set its own.</summary>

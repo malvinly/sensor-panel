@@ -3,7 +3,7 @@
   // Widgets are drawn in order, later ones on top. After editing, pick the config again from the tray menu.
   // The weather needs a latitude and longitude under "weather" in settings.json; until then it shows "--".
   // Three values to fit to your PC: the network graphs' 30 (MB/s), the disk graphs' 200 (MB/s) and the
-  // power graph's 250 (W).
+  // power graph's 500 (W).
   "name": "Default",
   "refreshMs": 1000,
   "orientation": "landscape",
@@ -72,13 +72,13 @@
     { "type": "graph", "sensor": "disk.write", "x": 178, "y": 282, "w": 124, "h": 19, "history": 45, "max": 200, "flip": true,
       "color": "#FF5C8A", "fill": true },
 
-    // ── Power: the CPU and the graphics card together ───────────────────────
+    // ── Power: the whole PC at the wall, worked out from the CPU and GPU ("wallPower" in settings.json)
     { "type": "panel", "x": 324, "y": 164, "w": 148, "h": 148, "radius": 10, "fill": "#B0080C14", "border": { "color": "#1E2636", "width": 1 },
       "accent": { "edge": "top", "color": "#FFC53D", "width": 3 } },
     { "type": "text", "value": "", "font": "Segoe Fluent Icons", "size": 15, "x": 336, "y": 177, "color": "#FFC53D" },
     { "type": "text", "value": "POWER", "x": 358, "y": 178, "size": 13, "weight": 600, "color": "#8A93A6" },
     { "type": "text", "value": "W", "x": 460, "y": 178, "align": "right", "size": 13, "weight": 600, "color": "#8A93A6" },
-    { "type": "text", "sensor": "power.total", "format": "{0:F0}", "x": 398, "y": 206, "align": "center", "size": 40, "weight": 600, "color": "#FFC53D" },
-    { "type": "graph", "sensor": "power.total", "x": 336, "y": 258, "w": 124, "h": 43, "history": 45, "max": 250, "color": "#FFC53D", "fill": true }
+    { "type": "text", "sensor": "power.wall", "format": "{0:F0}", "x": 398, "y": 206, "align": "center", "size": 40, "weight": 600, "color": "#FFC53D" },
+    { "type": "graph", "sensor": "power.wall", "x": 336, "y": 258, "w": 124, "h": 43, "history": 45, "max": 500, "color": "#FFC53D", "fill": true }
   ]
 }

@@ -18,9 +18,9 @@
     { "type": "graph", "sensor": "fps", "x": 22, "y": 172, "w": 200, "h": 76, "history": 60,
       "min": 0, "max": 165, "color": "#39D5FF", "thickness": 2, "fill": true },
     { "type": "panel", "x": 22, "y": 260, "w": 200, "h": 1, "fill": "#173445" },
-    { "type": "text", "value": "POWER DRAW", "x": 24, "y": 270, "size": 14, "weight": 600, "color": "#5FA9C4" },
-    { "type": "text", "sensor": "cpu.power", "format": "CPU {0:F0} W", "x": 24, "y": 290, "size": 18, "weight": 600 },
-    { "type": "text", "sensor": "gpu.power", "format": "GPU {0:F0} W", "x": 220, "y": 290, "align": "right", "size": 18, "weight": 600 },
+    // The whole PC at the wall, worked out from the CPU and GPU ("wallPower" in settings.json)
+    { "type": "text", "value": "POWER", "x": 24, "y": 275, "size": 18, "weight": 600, "color": "#5FA9C4" },
+    { "type": "text", "sensor": "power.wall", "format": "{0:F0} W", "x": 220, "y": 275, "align": "right", "size": 18, "weight": 600 },
 
     // ── CPU ─────────────────────────────────────────────────────────────────
     { "type": "panel", "x": 244, "y": 8, "w": 228, "h": 96, "radius": 10,

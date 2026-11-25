@@ -25,6 +25,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     private int _appliedChoice = NoBrightness;      // _chosenBrightness as the presenter was last configured with; worker thread only
     private const int NoBrightness = -1;
     private WeatherSettings? _weather;
+    private WallPowerSettings? _wallPower;
     private readonly ManualResetEventSlim _dark = new(false);   // set once the panel has been blanked for sleep
     private volatile bool _stop, _suspended, _displaysOff;
 
@@ -47,15 +48,17 @@ public sealed class Worker(IPresenter presenter, bool verbose)
     /// <param name="fallbackPath">Loaded instead if <paramref name="configPath"/> cannot be.</param>
     /// <param name="lhmGpu">"lhmGpu" from settings.json, for the SensorHub.</param>
     /// <param name="weather">"weather" from settings.json, for the SensorHub.</param>
+    /// <param name="wallPower">"wallPower" from settings.json, for the SensorHub.</param>
     /// <param name="upsideDown">"upsideDown" from settings.json: every config's orientation is turned 180°.</param>
     /// <param name="fallbackBrightness">"brightness" from settings.json, for configs that set none of their own.</param>
     /// <param name="chosenBrightness">Picked from the tray, over every config's and settings.json's; null for none.</param>
-    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather, bool upsideDown, int fallbackBrightness, int? chosenBrightness)
+    public void Start(string configPath, string fallbackPath, bool lhmGpu, WeatherSettings? weather, WallPowerSettings? wallPower, bool upsideDown, int fallbackBrightness, int? chosenBrightness)
     {
         _requested = configPath;
         _fallback = fallbackPath;
         _lhmGpu = lhmGpu;
         _weather = weather;
+        _wallPower = wallPower;
         _upsideDown = upsideDown;
         _fallbackBrightness = fallbackBrightness;
         _chosenBrightness = chosenBrightness ?? NoBrightness;
@@ -215,7 +218,7 @@ public sealed class Worker(IPresenter presenter, bool verbose)
             config = Config.Load(path);
             renderer = new Renderer(config, Path.GetDirectoryName(Path.GetFullPath(path))!);
             var keys = config.Widgets.SelectMany(w => w.SensorKeys());
-            if (_sensors is null) _sensors = new SensorHub(config.RefreshMs, config.SensorIntervals, keys, _lhmGpu, _weather);
+            if (_sensors is null) _sensors = new SensorHub(config.RefreshMs, config.SensorIntervals, keys, _lhmGpu, _weather, _wallPower);
             else _sensors.Configure(config.RefreshMs, config.SensorIntervals, keys);
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or InvalidDataException)

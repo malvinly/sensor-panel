@@ -10,6 +10,14 @@
   // Panel brightness, 0-100. A layout with its own "brightness" uses that instead.
   "brightness": 30,
 
+  // power.wall, what the PC draws from the wall: scale × (CPU + GPU power) + offset. These are
+  // an estimate for one PC (docs/guide.md, under wallPower); with a power meter, two readings
+  // (idle and in a game) give your own.
+  "wallPower": {
+    "scale": 1.15,
+    "offset": 49
+  },
+
   // Where the weather on the default layout is for, in decimal degrees (south and west are
   // negative). Until both are set, the weather shows "--". While a layout shows the weather,
   // they are sent to Open-Meteo (open-meteo.com), rounded to two decimals, about every 15 minutes.
